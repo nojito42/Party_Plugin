@@ -1,0 +1,2 @@
+Build failed:
+[1/4/2024 12:55:08 PM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\PartyPlugin.cs(89, 26)] CS7036: No se ha dado ningún argumento que corresponda al parámetro requerido "sender" de "MyServer.BroadcastMessage(string, Socket)"
