@@ -87,15 +87,10 @@ public class MyServer : IPartyPluginInstance, IDisposable
     public void BroadcastMessage(string message)
     {
         byte[] messageBytes = Encoding.ASCII.GetBytes(message + "<EOF>");
-
-        foreach (var client in connectedClients)
+        connectedClients.ForEach(c =>
         {
-            try
-            {
-                client.Send(messageBytes);
-            }
-            catch (Exception ex){}
-        }
+            try { c.Send(messageBytes); } catch (Exception ex) { }
+        });
     }
 
     public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
@@ -163,7 +158,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
             while (true)
             {
                 byte[] bytes = new byte[1024];
-                int bytesRec = await client.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);            
+                int bytesRec = await client.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
                 string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
                 I.LogMessage($"ListenForMessages broadcasted message: {receivedMessage}", 1, Color.Green);
             }

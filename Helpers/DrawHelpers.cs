@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 namespace Party_Plugin.Helpers;
 public static class DrawHelpers 
 {
-
     public static void DrawEllipseToWorld(this PartyPlugin p, System.Numerics.Vector3 pos, int radius, int points, int lineWidth, Color color)
     {
         var plottedCirclePoints = new List<System.Numerics.Vector3>();
