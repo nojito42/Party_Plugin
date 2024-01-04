@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Party_Plugin.Myserver;
 using Newtonsoft.Json;
+using static Party_Plugin.Myserver.Message;
 namespace Party_Plugin;
 
 
@@ -71,7 +72,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
         {
             if (Settings.PartyMemberType.Value == "Leader")
             {
-                var mess = new Message(Message.MessageType.none, "coucou");
+                var mess = new Message(MessageType.none, "coucou");
                 MyServer.BroadcastMessage(mess);
                 LogMsg(MyServer.connectedClients.Count.ToString());
             }
@@ -86,7 +87,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                     Client.StartClient();
 
                 if (Client.IsClientRunning)
-                    await Client.SendMessageToServer("coucou");
+                    await Client.SendMessageToServer(new Message(MessageType.none, "coucou"));
             }
         };
         return true;

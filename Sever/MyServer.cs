@@ -14,17 +14,17 @@ using System.Threading.Tasks;
 
 
 namespace Party_Plugin.Myserver;
-
+public enum MessageType
+{
+    Hidout,
+    Map,
+    act,
+    pause,
+    none
+}
 public class Message
 {
-    public enum MessageType
-    {
-        Hidout,
-        Map,
-        act,
-        pause,
-        none
-    }
+    
 
     [JsonProperty]
     public MessageType messageType;
@@ -197,7 +197,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
             IsClientRunning = false;
         }
     }
-    public async Task SendMessageToServer(string message)
+    public async Task SendMessageToServer(Message message)
     {
         try
         {
