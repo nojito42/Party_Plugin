@@ -74,7 +74,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                 }
                 else
                 {
-                    if (!Client.isClientRunning)
+                    if (!Client.IsClientRunning)
                         Client.StartClient();
 
                 }
@@ -96,7 +96,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                     Client = new MyClient();
                     Client.StartClient();
                 }
-                if (!Client.isClientRunning)
+                if (!Client.IsClientRunning)
                 Client.StartClient();
               
                 

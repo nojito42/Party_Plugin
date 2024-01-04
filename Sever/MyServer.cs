@@ -115,17 +115,20 @@ public class MyServer : IPartyPluginInstance, IDisposable
 
 public class MyClient : IPartyPluginInstance, IDisposable
 {
-    // ...
+    public bool IsClientRunning;
+
+    public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
+
 
     public async void StartClient()
     {
-        if (isClientRunning)
+        if (IsClientRunning)
         {
             I.LogMsg("Client is already running.");
             return;
         }
 
-        isClientRunning = true;
+        IsClientRunning = true;
 
         try
         {
@@ -188,6 +191,9 @@ public class MyClient : IPartyPluginInstance, IDisposable
         }
     }
 
-    // ...
+    public void Dispose()
+    {
+        
+    }
 }
 
