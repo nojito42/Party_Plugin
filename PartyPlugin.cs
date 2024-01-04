@@ -29,7 +29,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
     private bool isInParty = false;
     private Party.Party Party = new();
     private MyServer MyServer;
-    private MyClient Client ;
+    private MyClient Client;
     public Camera Cam => GameController.IngameState.Camera;
     public Element PartyUI => GameController.IngameState.IngameUi.PartyElement;
 
@@ -42,7 +42,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
             "Follower","Leader"
         });
 
-        Settings.Connect.OnPressed +=delegate 
+        Settings.Connect.OnPressed += delegate
         {
             if (Settings.PartyMemberType.Value == "Leader")
             {
@@ -50,23 +50,10 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                 {
                     MyServer = new MyServer();
                     MyServer.StartServer();
-                   // MyServer.StartClient();
                 }
-                else
-                {
-                   
-                }
-
-
             }
             else
             {
-                //if (MyServer == null)
-                //{
-                //    MyServer = new MyServer();
-                //    MyServer.StartServer();
-                //    // MyServer.StartClient();
-                //}
                 if (Client == null)
                 {
                     Client = new MyClient();
@@ -76,10 +63,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                 {
                     if (!Client.IsClientRunning)
                         Client.StartClient();
-
                 }
-
-
             }
         };
         Settings.Foo.OnPressed += async delegate
@@ -89,7 +73,6 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                 MyServer.BroadcastMessage("coucou");
                 LogMsg(MyServer.connectedClients.Count.ToString());
             }
-          
             else
             {
                 if (Client == null)
@@ -98,34 +81,26 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                     Client.StartClient();
                 }
                 if (!Client.IsClientRunning)
-                Client.StartClient();
+                    Client.StartClient();
 
-                if(Client.IsClientRunning)
-                   await Client.SendMessageToServer("coucou");
-              
-                
+                if (Client.IsClientRunning)
+                    await Client.SendMessageToServer("coucou");
             }
-
-
         };
         return true;
     }
-  
-
     public override void AreaChange(AreaInstance area)
     {
-
     }
-
     public override void OnUnload()
     {
         MyServer?.Dispose();
+        Client?.Dispose();
         base.OnUnload();
     }
     public List<PartyFoe> GetPlayerInfoElementList(List<Entity> entityList)
     {
         var playersInParty = new List<PartyFoe>();
-
         try
         {
             var partElementList = PartyUI?.Children?[0]?.Children?[0]?.Children;
@@ -154,21 +129,19 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
         {
             LogError($"Character: {e}", 5);
         }
-
         return playersInParty;
     }
 
     public override Job Tick()
     {
         isInParty = PartyUI.Children[0].ChildCount > 0 && PartyUI.Children[0].Height > 1;
-
         if (isInParty && GameController.InGame)
         {
             List<PartyFoe> partyFoes;
-           
-                partyFoes = GetPlayerInfoElementList(GameController.EntityListWrapper.ValidEntitiesByType[EntityType.Player]);
-                Party.Foes = partyFoes;
-            
+
+            partyFoes = GetPlayerInfoElementList(GameController.EntityListWrapper.ValidEntitiesByType[EntityType.Player]);
+            Party.Foes = partyFoes;
+
 
             foreach (var item in partyFoes)
             {
@@ -211,6 +184,5 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
 
     public override void EntityAdded(Entity entity)
     {
-
     }
 }
