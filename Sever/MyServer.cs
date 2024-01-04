@@ -53,13 +53,11 @@ public class MyServer : IPartyPluginInstance, IDisposable
                         using (Socket handler = listener.Accept())
                         {
                             // Add the connected client to the list
-                          
+                            if (!connectedClients.Any(e => e == handler))
+                                connectedClients.Add(handler);
 
                             while (true)
                             {
-
-                                if (!connectedClients.Any(e => e == handler))
-                                    connectedClients.Add(handler);
                                 int bytesRec = handler.Receive(bytes);
                                 string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
 
@@ -71,7 +69,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
                                     // Broadcast the message to all connected clients
                                     BroadcastMessage(receivedMessage);
 
-                                   // break;
+                                    // break;
                                 }
                             }
 
@@ -84,7 +82,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
             catch (Exception e)
             {
                 I.LogMsg($"Server error: {e.ToString()}");
-            }          
+            }
         });
     }
 
@@ -105,64 +103,6 @@ public class MyServer : IPartyPluginInstance, IDisposable
         }
     }
 
-
-
-    //public void StartClient()
-    //{
-    //    byte[] bytes = new byte[1024];
-
-    //    try
-    //    {
-    //        // Connect to a Remote server
-    //        // Get Host IP Address that is used to establish a connection
-    //        // In this case, we get one IP address of the server machine
-    //        IPAddress ipAddress = IPAddress.Parse("192.168.1.114"); // Replace with your server's IP address
-    //        IPEndPoint remoteEP = new IPEndPoint(ipAddress, 11000);
-
-    //        // Create a TCP/IP socket.
-    //        using (Socket sender = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
-    //        {
-    //            // Connect the socket to the remote endpoint. Catch any errors.
-    //            try
-    //            {
-    //                // Connect to Remote EndPoint
-    //                sender.Connect(remoteEP);
-
-    //                I.LogMsg($"Socket connected to {sender.RemoteEndPoint}");
-
-    //                // Encode the data string into a byte array.
-    //                byte[] msg = Encoding.ASCII.GetBytes($"{I.GameController.Player.GetComponent<Player>().PlayerName} said : {I.GameController.Player.PosNum.ToString()} <EOF> ");
-
-    //                // Send the data through the socket.
-    //                int bytesSent = sender.Send(msg);
-
-    //                // Receive the response from the remote device.
-    //                int bytesRec = sender.Receive(bytes);
-    //                I.LogMsg($"Echoed test = {Encoding.ASCII.GetString(bytes, 0, bytesRec)}");
-
-    //                // Release the socket.
-    //                sender.Shutdown(SocketShutdown.Both);
-    //            }
-    //            catch (ArgumentNullException ane)
-    //            {
-    //                I.LogMsg($"ArgumentNullException : {ane.ToString()}");
-    //            }
-    //            catch (SocketException se)
-    //            {
-    //                I.LogMsg($"SocketException : {se.ToString()}");
-    //            }
-    //            catch (Exception e)
-    //            {
-    //                I.LogMsg($"Unexpected exception : {e.ToString()}");
-    //            }
-    //        }
-    //    }
-    //    catch (Exception e)
-    //    {
-    //        I.LogMsg(e.ToString());
-    //    }
-    //}
-
     public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
     public void Dispose()
@@ -175,9 +115,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
 
 public class MyClient : IPartyPluginInstance, IDisposable
 {
-    public bool isClientRunning = false;
-    private Socket client;
-
+    // ...
 
     public async void StartClient()
     {
@@ -194,7 +132,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
             IPAddress ipAddress = IPAddress.Parse("192.168.1.114"); // Replace with your server's IP address
             int port = 11000;
 
-            using (client = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+            using (Socket client = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
             {
                 IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
 
@@ -207,7 +145,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
                     int bytesSent = await client.SendAsync(msg, SocketFlags.None);
 
                     // Start a separate thread to listen for incoming messages
-                    await Task.Run(() => ListenForMessages());
+                    await Task.Run(() => ListenForMessages(client));
 
                     // You can add other logic or operations here if needed
                 }
@@ -221,10 +159,9 @@ public class MyClient : IPartyPluginInstance, IDisposable
         {
             I.LogMsg($"Client error: {e.ToString()}");
         }
-       
     }
 
-    private void ListenForMessages()
+    private void ListenForMessages(Socket client)
     {
         try
         {
@@ -236,13 +173,13 @@ public class MyClient : IPartyPluginInstance, IDisposable
                 // Check if no bytes were received (socket closed by the server)
                 if (bytesRec == 0)
                 {
-                  //  I.LogMsg("Server closed the connection. Exiting the loop.");
-        
+                    //  I.LogMsg("Server closed the connection. Exiting the loop.");
+
                 }
 
                 string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
 
-                I.LogMessage($"LiestenForMessages broadcasted message: {receivedMessage}",1,Color.Green);
+                I.LogMessage($"LiestenForMessages broadcasted message: {receivedMessage}", 1, Color.Green);
             }
         }
         catch (Exception ex)
@@ -251,15 +188,6 @@ public class MyClient : IPartyPluginInstance, IDisposable
         }
     }
 
-
-
-    public void Dispose()
-    {
-        client?.Dispose();
-    }
-
-    // Rest of your client code...
-
-    public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
+    // ...
 }
 
