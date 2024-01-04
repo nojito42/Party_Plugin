@@ -195,6 +195,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
         catch (Exception ex)
         {
             I.LogMsg($"Error while listening for messages: {ex.ToString()}");
+            IsClientRunning = false;
         }
     }
 
