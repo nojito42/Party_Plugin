@@ -1,5 +1,6 @@
 ﻿using ExileCore;
 using ExileCore.PoEMemory.Components;
+using Newtonsoft.Json;
 using Party_Plugin;
 using SharpDX;
 using System;
@@ -11,7 +12,32 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+
 namespace Party_Plugin.Myserver;
+
+public class Message
+{
+    public enum MessageType
+    {
+        Hidout,
+        Map,
+        act,
+        pause,
+        none
+    }
+
+    [JsonProperty]
+    public MessageType messageType;
+    [JsonProperty]
+    public string message;
+
+    [JsonConstructor]
+    public Message(MessageType messageType, string message)
+    {
+        this.messageType = messageType;
+        this.message = message;
+    }
+}
 public class MyServer : IPartyPluginInstance, IDisposable
 {
     public bool isServerRunning = false;
@@ -73,7 +99,8 @@ public class MyServer : IPartyPluginInstance, IDisposable
                 {
                     receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
                     I.LogMsg($"Text received: {receivedMessage}");
-                    BroadcastMessage(receivedMessage);
+                    var serializedMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
+                    BroadcastMessage(serializedMessage);
                 }
             }
         }
@@ -84,9 +111,10 @@ public class MyServer : IPartyPluginInstance, IDisposable
         }
     }
 
-    public void BroadcastMessage(string message)
+    public void BroadcastMessage(Message message)
     {
-        byte[] messageBytes = Encoding.ASCII.GetBytes(message + "<EOF>");
+        string serializedMessage = JsonConvert.SerializeObject(message);
+        byte[] messageBytes = Encoding.ASCII.GetBytes(serializedMessage + "<EOF>");
         connectedClients.ForEach(c =>
         {
             try { c.Send(messageBytes); } catch (Exception ex) { }

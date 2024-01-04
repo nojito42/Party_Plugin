@@ -15,6 +15,7 @@ using System.Net.WebSockets;
 using System.Threading.Tasks;
 using System.Threading;
 using Party_Plugin.Myserver;
+using Newtonsoft.Json;
 namespace Party_Plugin;
 
 
@@ -70,7 +71,8 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
         {
             if (Settings.PartyMemberType.Value == "Leader")
             {
-                MyServer.BroadcastMessage("coucou");
+                var mess = new Message(Message.MessageType.none, "coucou");
+                MyServer.BroadcastMessage(mess);
                 LogMsg(MyServer.connectedClients.Count.ToString());
             }
             else
