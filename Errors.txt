@@ -1,2 +1,3 @@
 Build failed:
-[1/4/2024 12:55:08 PM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\PartyPlugin.cs(89, 26)] CS7036: No se ha dado ningún argumento que corresponda al parámetro requerido "sender" de "MyServer.BroadcastMessage(string, Socket)"
+[1/4/2024 7:47:31 PM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\Sever\MyServer.cs(39, 74)] CS0103: El nombre 'port' no existe en el contexto actual
+[1/4/2024 7:47:31 PM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\Sever\MyServer.cs(39, 63)] CS1503: Argumento 1: no se puede convertir de 'System.Net.IPAddress' a 'long'
