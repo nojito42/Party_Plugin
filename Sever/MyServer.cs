@@ -1,6 +1,4 @@
-﻿
-
-using ExileCore;
+﻿using ExileCore;
 using ExileCore.PoEMemory.Components;
 using Party_Plugin;
 using SharpDX;
@@ -56,7 +54,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
             }
             catch (Exception e)
             {
-                I.LogMsg($"Server error: {e.ToString()}");
+                I.LogMsg($"Server error: {e}");
             }
         });
     }
@@ -82,7 +80,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
         catch (Exception ex) { }
         finally
         {
-            I.LogMsg($"finally");
+            //I.LogMsg($"finally");
         }
     }
 
@@ -148,13 +146,13 @@ public class MyClient : IPartyPluginInstance, IDisposable
                 }
                 catch (Exception e)
                 {
-                    I.LogMsg($"Client connection error: {e.ToString()}");
+                    I.LogMsg($"Client connection error: {e}");
                 }
             }
         }
         catch (Exception e)
         {
-            I.LogMsg($"Client error: {e.ToString()}");
+            I.LogMsg($"Client error: {e}");
         }
     }
 
@@ -172,7 +170,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
         }
         catch (Exception ex)
         {
-            I.LogMsg($"Error while listening for messages: {ex.ToString()}");
+            I.LogMsg($"Error while listening for messages: {ex}");
             IsClientRunning = false;
         }
     }
@@ -195,7 +193,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
         }
         catch (Exception e)
         {
-            I.LogMsg($"Error sending message to server: {e.ToString()}");
+            I.LogMsg($"Error sending message to server: {e}");
         }
     }
     public void Dispose()
