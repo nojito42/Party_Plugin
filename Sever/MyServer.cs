@@ -18,7 +18,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
 {
     public bool isServerRunning = false;
     private Socket listener;
-    private List<Socket> connectedClients = new List<Socket>(); // Maintain a list of connected clients
+    public List<Socket> connectedClients = new List<Socket>(); // Maintain a list of connected clients
 
     public void StartServer()
     {
@@ -59,11 +59,14 @@ public class MyServer : IPartyPluginInstance, IDisposable
                         while (true)
                         {
                             I.LogMsg("Inside the loop");
+
                             if (!connectedClients.Any(e => e == handler))
                                 connectedClients.Add(handler);
+
                             int bytesRec = handler.Receive(bytes);
                             string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
                             I.LogMsg($"Number of connected clients: {connectedClients.Count}");
+                            I.LogMsg($"Received message: {receivedMessage}");
 
                             if (receivedMessage.Contains("<EOF>"))
                             {
