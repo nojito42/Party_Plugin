@@ -19,7 +19,6 @@ public class MyServer : IPartyPluginInstance, IDisposable
     public bool isServerRunning = false;
     private Socket listener;
     public List<Socket> connectedClients = new List<Socket>(); // Maintain a list of connected clients
-    private int port;
 
     public void StartServer()
     {
@@ -33,7 +32,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
         {
             try
             {
-                IPAddress ipAddress = IPAddress.Parse("192.168.1.114");
+                IPAddress ipAddress = IPAddress.Parse("192.168.1.114"); 
 
                 using (listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
                 {
@@ -46,10 +45,10 @@ public class MyServer : IPartyPluginInstance, IDisposable
                     {
                         I.LogMsg($"Server is listening on {localEndPoint} - co {connectedClients.Count}");
 
-                        Socket handler = await listener.AcceptAsync();
+                        Socket handler = await listener.AcceptAsync(); 
                         connectedClients.Add(handler);
 
-                        _ = HandleClientAsync(handler);
+                        _ = HandleClientAsync(handler); 
                     }
                 }
             }
@@ -78,7 +77,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
                 }
             }
         }
-        catch (Exception ex) { }
+        catch (Exception ex) { }      
     }
 
     public void BroadcastMessage(string message)
@@ -91,9 +90,10 @@ public class MyServer : IPartyPluginInstance, IDisposable
             {
                 client.Send(messageBytes);
             }
-            catch (Exception ex) { }
+            catch (Exception ex){}
         }
     }
+
     public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
     public void Dispose()
@@ -101,10 +101,12 @@ public class MyServer : IPartyPluginInstance, IDisposable
         listener.Dispose();
     }
 }
+
+
+
 public class MyClient : IPartyPluginInstance, IDisposable
 {
     public bool IsClientRunning;
-    private Socket client;
 
     public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
@@ -161,6 +163,8 @@ public class MyClient : IPartyPluginInstance, IDisposable
                 byte[] bytes = new byte[1024];
                 int bytesRec = await client.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
 
+              
+
                 string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
                 I.LogMessage($"ListenForMessages broadcasted message: {receivedMessage}", 1, Color.Green);
             }
@@ -178,7 +182,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
             IPAddress ipAddress = IPAddress.Parse("192.168.1.114"); // Replace with your server's IP address
             int port = 11000;
 
-            using (client = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+            using (Socket client = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
             {
                 IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
 
@@ -194,8 +198,8 @@ public class MyClient : IPartyPluginInstance, IDisposable
             I.LogMsg($"Error sending message to server: {e.ToString()}");
         }
     }
+
     public void Dispose()
     {
-        client.Dispose();
     }
 }
