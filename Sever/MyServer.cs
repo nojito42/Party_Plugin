@@ -1,4 +1,6 @@
-﻿using ExileCore;
+﻿
+
+using ExileCore;
 using ExileCore.PoEMemory.Components;
 using Party_Plugin;
 using SharpDX;
@@ -50,32 +52,33 @@ public class MyServer : IPartyPluginInstance, IDisposable
                         byte[] bytes = new byte[1024];
                         I.LogMsg($"Server is listening on {localEndPoint} - co {connectedClients.ToString()}");
 
-                        using (Socket handler = listener.Accept())
+                        using Socket handler = listener.Accept();
+                        // Add the connected client to the list
+
+
+                        while (true)
                         {
-                            // Add the connected client to the list
+                            I.LogMsg("Inside the loop");
                             if (!connectedClients.Any(e => e == handler))
                                 connectedClients.Add(handler);
+                            int bytesRec = handler.Receive(bytes);
+                            string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
+                            I.LogMsg($"Number of connected clients: {connectedClients.Count}");
 
-                            while (true)
+                            if (receivedMessage.Contains("<EOF>"))
                             {
-                                int bytesRec = handler.Receive(bytes);
-                                string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
+                                receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
+                                I.LogMsg($"Text received: {receivedMessage}");
 
-                                if (receivedMessage.Contains("<EOF>"))
-                                {
-                                    receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
-                                    I.LogMsg($"Text received: {receivedMessage}");
+                                // Broadcast the message to all connected clients
+                                BroadcastMessage(receivedMessage);
 
-                                    // Broadcast the message to all connected clients
-                                    BroadcastMessage(receivedMessage);
-
-                                    // break;
-                                }
+                                // break;
                             }
-
-                            handler.Shutdown(SocketShutdown.Both);
-                            connectedClients.Remove(handler); // Remove the disconnected client from the list
                         }
+
+                        handler.Shutdown(SocketShutdown.Both);
+                        connectedClients.Remove(handler); // Remove the disconnected client from the list
                     }
                 }
             }
@@ -193,7 +196,6 @@ public class MyClient : IPartyPluginInstance, IDisposable
 
     public void Dispose()
     {
-        
+
     }
 }
-
