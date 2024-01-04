@@ -27,12 +27,14 @@ public class MyServer : IPartyPluginInstance, IDisposable
             I.LogMsg("Server is already running.");
             return;
         }
+
         isServerRunning = true;
         Task.Run(async () =>
         {
             try
             {
-                IPAddress ipAddress = IPAddress.Parse("192.168.1.114"); 
+                IPAddress ipAddress = IPAddress.Parse("192.168.1.114"); // Replace with your server's IP address
+                int port = 11000;
 
                 using (listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
                 {
@@ -45,10 +47,10 @@ public class MyServer : IPartyPluginInstance, IDisposable
                     {
                         I.LogMsg($"Server is listening on {localEndPoint} - co {connectedClients.Count}");
 
-                        Socket handler = await listener.AcceptAsync(); 
+                        Socket handler = await listener.AcceptAsync(); // Use async Accept
                         connectedClients.Add(handler);
 
-                        _ = HandleClientAsync(handler); 
+                        _ = HandleClientAsync(handler); // Handle each client asynchronously
                     }
                 }
             }
@@ -73,11 +75,22 @@ public class MyServer : IPartyPluginInstance, IDisposable
                 {
                     receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
                     I.LogMsg($"Text received: {receivedMessage}");
+
+                    // Broadcast the message to all connected clients
                     BroadcastMessage(receivedMessage);
                 }
             }
         }
-        catch (Exception ex) { }      
+        catch (Exception ex)
+        {
+            //I.LogMsg($"Error handling client: {ex.ToString()}");
+        }
+        finally
+        {
+            I.LogMsg($"finally");
+            //handler.Shutdown(SocketShutdown.Both);
+            //connectedClients.Remove(handler); // Remove the disconnected client from the list
+        }
     }
 
     public void BroadcastMessage(string message)
@@ -90,7 +103,10 @@ public class MyServer : IPartyPluginInstance, IDisposable
             {
                 client.Send(messageBytes);
             }
-            catch (Exception ex){}
+            catch (Exception ex)
+            {
+                //I.LogMsg($"Error broadcasting message to client: {ex.ToString()}");
+            }
         }
     }
 
@@ -175,6 +191,8 @@ public class MyClient : IPartyPluginInstance, IDisposable
             IsClientRunning = false;
         }
     }
+
+    // New method to send a message to the server
     public async Task SendMessageToServer(string message)
     {
         try
@@ -201,5 +219,6 @@ public class MyClient : IPartyPluginInstance, IDisposable
 
     public void Dispose()
     {
+        // Dispose of any resources if needed
     }
 }
