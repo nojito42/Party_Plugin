@@ -61,12 +61,12 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
             }
             else
             {
-                if (MyServer == null)
-                {
-                    MyServer = new MyServer();
-                    MyServer.StartServer();
-                    // MyServer.StartClient();
-                }
+                //if (MyServer == null)
+                //{
+                //    MyServer = new MyServer();
+                //    MyServer.StartServer();
+                //    // MyServer.StartClient();
+                //}
                 if (Client == null)
                 {
                     Client = new MyClient();
