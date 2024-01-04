@@ -199,6 +199,31 @@ public class MyClient : IPartyPluginInstance, IDisposable
         }
     }
 
+    // New method to send a message to the server
+    public async Task SendMessageToServer(string message)
+    {
+        try
+        {
+            IPAddress ipAddress = IPAddress.Parse("192.168.1.114"); // Replace with your server's IP address
+            int port = 11000;
+
+            using (Socket client = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+            {
+                IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
+
+                await client.ConnectAsync(remoteEP);
+                I.LogMsg($"Socket connected to {client.RemoteEndPoint}");
+
+                byte[] msg = Encoding.ASCII.GetBytes($"{message}<EOF>");
+                int bytesSent = await client.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
+            }
+        }
+        catch (Exception e)
+        {
+            I.LogMsg($"Error sending message to server: {e.ToString()}");
+        }
+    }
+
     public void Dispose()
     {
         // Dispose of any resources if needed

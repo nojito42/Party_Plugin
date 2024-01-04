@@ -82,7 +82,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
 
             }
         };
-        Settings.Foo.OnPressed += delegate
+        Settings.Foo.OnPressed += async delegate
         {
             if (Settings.PartyMemberType.Value == "Leader")
             {
@@ -99,6 +99,9 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                 }
                 if (!Client.IsClientRunning)
                 Client.StartClient();
+
+                if(Client.IsClientRunning)
+                   await Client.SendMessageToServer("coucou");
               
                 
             }
