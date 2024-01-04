@@ -32,7 +32,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
         isServerRunning = true;
 
         // Run the server in a separate thread using Task.Run
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             try
             {
@@ -46,42 +46,14 @@ public class MyServer : IPartyPluginInstance, IDisposable
                     listener.Bind(localEndPoint);
                     listener.Listen(10);
 
-
                     while (true)
                     {
-                        byte[] bytes = new byte[1024];
-                        I.LogMsg($"Server is listening on {localEndPoint} - co {connectedClients.ToString()}");
+                        I.LogMsg($"Server is listening on {localEndPoint} - co {connectedClients.Count}");
 
-                        using Socket handler = listener.Accept();
-                        // Add the connected client to the list
+                        Socket handler = await listener.AcceptAsync(); // Use async Accept
+                        connectedClients.Add(handler);
 
-
-                        while (true)
-                        {
-                            I.LogMsg("Inside the loop");
-
-                            if (!connectedClients.Any(e => e == handler))
-                                connectedClients.Add(handler);
-
-                            int bytesRec = handler.Receive(bytes);
-                            string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                            I.LogMsg($"Number of connected clients: {connectedClients.Count}");
-                            I.LogMsg($"Received message: {receivedMessage}");
-
-                            if (receivedMessage.Contains("<EOF>"))
-                            {
-                                receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
-                                I.LogMsg($"Text received: {receivedMessage}");
-
-                                // Broadcast the message to all connected clients
-                                BroadcastMessage(receivedMessage);
-
-                                // break;
-                            }
-                        }
-
-                        handler.Shutdown(SocketShutdown.Both);
-                        connectedClients.Remove(handler); // Remove the disconnected client from the list
+                        _ = HandleClientAsync(handler); // Handle each client asynchronously
                     }
                 }
             }
@@ -90,6 +62,37 @@ public class MyServer : IPartyPluginInstance, IDisposable
                 I.LogMsg($"Server error: {e.ToString()}");
             }
         });
+    }
+
+    private async Task HandleClientAsync(Socket handler)
+    {
+        try
+        {
+            byte[] bytes = new byte[1024];
+            while (true)
+            {
+                int bytesRec = await handler.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
+                string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
+
+                if (receivedMessage.Contains("<EOF>"))
+                {
+                    receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
+                    I.LogMsg($"Text received: {receivedMessage}");
+
+                    // Broadcast the message to all connected clients
+                    BroadcastMessage(receivedMessage);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            I.LogMsg($"Error handling client: {ex.ToString()}");
+        }
+        finally
+        {
+            handler.Shutdown(SocketShutdown.Both);
+            connectedClients.Remove(handler); // Remove the disconnected client from the list
+        }
     }
 
     public void BroadcastMessage(string message)
@@ -125,7 +128,6 @@ public class MyClient : IPartyPluginInstance, IDisposable
 
     public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
-
     public async void StartClient()
     {
         if (IsClientRunning)
@@ -151,7 +153,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
                     I.LogMsg($"Socket connected to {client.RemoteEndPoint}");
 
                     byte[] msg = Encoding.ASCII.GetBytes($"{I.GameController.Player.GetComponent<Player>().PlayerName} said : {I.GameController.Player.PosNum.ToString()} <EOF>");
-                    int bytesSent = await client.SendAsync(msg, SocketFlags.None);
+                    int bytesSent = await client.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
 
                     // Start a separate thread to listen for incoming messages
                     await Task.Run(() => ListenForMessages(client));
@@ -170,25 +172,24 @@ public class MyClient : IPartyPluginInstance, IDisposable
         }
     }
 
-    private void ListenForMessages(Socket client)
+    private async Task ListenForMessages(Socket client)
     {
         try
         {
             while (true)
             {
                 byte[] bytes = new byte[1024];
-                int bytesRec = client.Receive(bytes);
+                int bytesRec = await client.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
 
                 // Check if no bytes were received (socket closed by the server)
                 if (bytesRec == 0)
                 {
-                    //  I.LogMsg("Server closed the connection. Exiting the loop.");
-
+                    // Handle socket closed by the server
+                    break;
                 }
 
                 string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-
-                I.LogMessage($"LiestenForMessages broadcasted message: {receivedMessage}", 1, Color.Green);
+                I.LogMessage($"ListenForMessages broadcasted message: {receivedMessage}", 1, Color.Green);
             }
         }
         catch (Exception ex)
@@ -199,6 +200,6 @@ public class MyClient : IPartyPluginInstance, IDisposable
 
     public void Dispose()
     {
-
+        // Dispose of any resources if needed
     }
 }
