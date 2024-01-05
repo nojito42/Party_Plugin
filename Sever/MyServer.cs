@@ -97,7 +97,6 @@ public class MyServer : IPartyPluginInstance, IDisposable
                 int bytesRec = await handler.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
                 string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
 
-                receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
                 var serializedMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
                 I.LogMsg($"Text received: {serializedMessage}");
 
@@ -167,7 +166,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
                     await client.Socket.ConnectAsync(remoteEP);
                     I.LogMsg($"Socket connected to {client.Socket.RemoteEndPoint}");
 
-                    byte[] msg = Encoding.ASCII.GetBytes($"{I.GameController.Player.GetComponent<Player>().PlayerName} said : {I.GameController.Player.PosNum.ToString()} <EOF>");
+                    byte[] msg = Encoding.ASCII.GetBytes($"{I.GameController.Player.GetComponent<Player>().PlayerName} said : {I.GameController.Player.PosNum.ToString()}");
                     int bytesSent = await client.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
 
                     // Start a separate thread to listen for incoming messages
@@ -219,8 +218,9 @@ public class MyClient : IPartyPluginInstance, IDisposable
                 await client.Socket.ConnectAsync(remoteEP);
                 I.LogMsg($"Socket connected to {client.Socket.RemoteEndPoint}");
 
-                byte[] msg = Encoding.ASCII.GetBytes($"{message}<EOF>");
-                int bytesSent = await client.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
+                byte[] msg = Encoding.ASCII.GetBytes($"{message}");
+
+                await client.Socket.SendAsync(msg, SocketFlags.None);
             }
         }
         catch (Exception e)
