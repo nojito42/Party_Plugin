@@ -71,7 +71,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                 {
                     // Check if ClientInstance is not null before using it
                    
-                        MyServer.BroadcastMessage(new Message(MessageType.None, "coucou"), Client.ClientInstance);
+                        MyServer.BroadcastMessage(new Message(MessageType.None, "coucou",Client.ClientInstance));
                         LogMsg(MyServer.ConnectedClients.Count.ToString());
       
                 }
@@ -88,7 +88,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
 
                 // Check if ClientInstance is not null before using it
                 if (Client != null && Client.ClientInstance != null)
-                    await Client.SendMessageToServer(new Message(MessageType.None, "coucou"));
+                    await Client.SendMessageToServer(new Message(MessageType.None, "coucou",Client.ClientInstance));
                 else
                     LogMsg("Client or ClientInstance is null");
             }

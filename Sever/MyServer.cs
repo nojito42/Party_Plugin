@@ -24,12 +24,17 @@ public class Message
 
     [JsonProperty("messageText")]
     public string MessageText { get; set; }
+    [JsonProperty("sender")]
+    public Client Sender { get; set; }
+
+
     [JsonConstructor]
 
-    public Message(MessageType messageType, string messageText)
+    public Message(MessageType messageType, string messageText, Client sender)
     {
         MessageType = messageType;
         MessageText = messageText;
+        Sender = sender;
     }
 }
 public class Client
@@ -118,7 +123,7 @@ public class MyServer : IDisposable
                     try
                     {
                         Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
-                        BroadcastMessage(myMessage, client);
+                        BroadcastMessage(myMessage);
                     }
                     catch (JsonReaderException ex)
                     {
@@ -137,13 +142,13 @@ public class MyServer : IDisposable
         }
     }
 
-    public void BroadcastMessage(Message message, Client sender)
+    public void BroadcastMessage(Message message)
     {
         try
         {
             // Include the sender's name in the message
-            string fullMessage = $"{sender?.Name ?? I.GameController.Player.GetComponent<Player>().PlayerName} says: {message.MessageText}";
-            Message updatedMessage = new Message(message.MessageType, fullMessage);
+            string fullMessage = $"{message.Sender?.Name ?? I.GameController.Player.GetComponent<Player>().PlayerName} says: {message.MessageText}";
+            Message updatedMessage = new Message(message.MessageType, fullMessage,message.Sender);
 
             string serializedMessage = JsonConvert.SerializeObject(updatedMessage);
             byte[] messageBytes = Encoding.UTF8.GetBytes(serializedMessage);
