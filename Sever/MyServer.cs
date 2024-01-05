@@ -25,7 +25,6 @@ public enum MessageType
 }
 
 // Message Class
-[method: JsonConstructor]
 public class Message
 {
     [JsonProperty("messageType")]
@@ -33,6 +32,7 @@ public class Message
 
     [JsonProperty("messageText")]
     public string MessageText { get; set; }
+    [JsonConstructor]
 
     public Message(MessageType messageType, string messageText)
     {
@@ -55,10 +55,10 @@ public class MyServer : IDisposable
 {
     public bool IsServerRunning { get; set; }
     private Socket listener;
-    public List<Socket> ConnectedClients { get; } = new List<Socket>();
+    public List<Client> ConnectedClients { get; } = new List<Client>();
     public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
-    public void StartServer()
+    public async Task StartServer()
     {
         if (IsServerRunning)
         {
@@ -68,39 +68,37 @@ public class MyServer : IDisposable
 
         IsServerRunning = true;
 
-        Task.Run(async () =>
+        try
         {
-            try
+            IPAddress ipAddress = IPAddress.Any;
+            int port = 11000;
+
+            using (listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
             {
-                IPAddress ipAddress = IPAddress.Any;
-                int port = 11000;
+                IPEndPoint localEndPoint = new IPEndPoint(ipAddress, port);
 
-                using (listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+                listener.Bind(localEndPoint);
+                listener.Listen(10);
+
+                while (true)
                 {
-                    IPEndPoint localEndPoint = new IPEndPoint(ipAddress, port);
+                    I.LogMsg($"Server is listening on {localEndPoint} - co {ConnectedClients.Count}");
 
-                    listener.Bind(localEndPoint);
-                    listener.Listen(10);
+                    Socket handler = await listener.AcceptAsync();
+                    Client client = new Client { Socket = handler };
+                    ConnectedClients.Add(client);
 
-                    while (true)
-                    {
-                        I.LogMsg($"Server is listening on {localEndPoint} - co {ConnectedClients.Count}");
-
-                        Socket handler = await listener.AcceptAsync();
-                        ConnectedClients.Add(handler);
-
-                        _ = HandleClientAsync(handler);
-                    }
+                    _ = HandleClientAsync(client);
                 }
             }
-            catch (Exception e)
-            {
-                I.LogMsg($"Server error: {e.ToString()}");
-            }
-        });
+        }
+        catch (Exception e)
+        {
+            I.LogMsg($"Server error: {e.ToString()}");
+        }
     }
 
-    private async Task HandleClientAsync(Socket handler)
+    private async Task HandleClientAsync(Client client)
     {
         byte[] bytes = new byte[1024];
 
@@ -108,12 +106,12 @@ public class MyServer : IDisposable
         {
             while (true)
             {
-                int bytesRec = await handler.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
+                int bytesRec = await client.Socket.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
 
                 if (bytesRec == 0)
                 {
-                    ConnectedClients.Remove(handler);
-                    handler.Close();
+                    ConnectedClients.Remove(client);
+                    client.Socket.Close();
                     break;
                 }
 
@@ -152,7 +150,7 @@ public class MyServer : IDisposable
             {
                 try
                 {
-                    client.Send(messageBytes);
+                    client.Socket.Send(messageBytes);
                 }
                 catch (SocketException ex)
                 {
@@ -179,12 +177,11 @@ public class MyServer : IDisposable
 // MyClient Class
 public class MyClient : IDisposable
 {
-    public Socket Client;
-
+    public Client ClientInstance { get; set; }
     public bool IsClientRunning { get; set; }
     public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
-    public async void StartClient()
+    public async Task StartClient()
     {
         if (IsClientRunning)
         {
@@ -198,20 +195,21 @@ public class MyClient : IDisposable
         {
             IPAddress ipAddress = IPAddress.Parse("192.168.1.114");
             int port = 11000;
+            ClientInstance = new Client { Socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp) };
 
-            using ( Client = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+            using (ClientInstance.Socket)
             {
                 IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
 
                 try
                 {
-                    await Client.ConnectAsync(remoteEP);
-                    I.LogMsg($"Socket connected to {Client.RemoteEndPoint}");
+                    await ClientInstance.Socket.ConnectAsync(remoteEP);
+                    I.LogMsg($"Socket connected to {ClientInstance.Socket.RemoteEndPoint}");
 
                     byte[] msg = Encoding.ASCII.GetBytes($"{I.GameController.Player.GetComponent<Player>().PlayerName} said : {I.GameController.Player.PosNum.ToString()}");
-                    int bytesSent = await Client.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
+                    int bytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
 
-                    await Task.Run(() => ListenForMessages(Client));
+                    await Task.Run(() => ListenForMessages());
                 }
                 catch (Exception e)
                 {
@@ -225,14 +223,14 @@ public class MyClient : IDisposable
         }
     }
 
-    private async Task ListenForMessages(Socket client)
+    private async Task ListenForMessages()
     {
         try
         {
             while (true)
             {
                 byte[] bytes = new byte[1024];
-                int bytesRec = await client.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
+                int bytesRec = await ClientInstance.Socket.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
 
                 if (bytesRec == 0)
                 {
@@ -257,7 +255,7 @@ public class MyClient : IDisposable
             string serializedMessage = JsonConvert.SerializeObject(myMessage);
             byte[] msg = Encoding.ASCII.GetBytes(serializedMessage);
 
-            int bytesSent = await Client.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
+            int bytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
         }
         catch (Exception e)
         {
@@ -270,4 +268,5 @@ public class MyClient : IDisposable
         // Dispose of any resources if needed
     }
 }
+
 
