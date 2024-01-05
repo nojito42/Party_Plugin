@@ -70,15 +70,10 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                 if (MyServer != null)
                 {
                     // Check if ClientInstance is not null before using it
-                    if (Client != null && Client.ClientInstance != null)
-                    {
+                   
                         MyServer.BroadcastMessage(new Message(MessageType.None, "coucou"), Client.ClientInstance);
                         LogMsg(MyServer.ConnectedClients.Count.ToString());
-                    }
-                    else
-                    {
-                        LogMsg("Client or ClientInstance is null");
-                    }
+      
                 }
             }
             else

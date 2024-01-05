@@ -116,7 +116,7 @@ public class MyServer : IDisposable
                 }
 
                 string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                I.LogMsg($"Received message from {client.Name}: {receivedMessage}");
+                I.LogMsg($"{client.Name} says: {receivedMessage}");
 
                 try
                 {
@@ -144,7 +144,7 @@ public class MyServer : IDisposable
         try
         {
             // Include the sender's name in the message
-            string fullMessage = $"{sender.Name} says: {message.MessageText}";
+            string fullMessage = $"{sender?.Name ?? I.GameController.Player.GetComponent<Player>().PlayerName} says: {message.MessageText}";
             Message updatedMessage = new Message(message.MessageType, fullMessage);
 
             string serializedMessage = JsonConvert.SerializeObject(updatedMessage);
@@ -183,6 +183,7 @@ public class MyClient : IDisposable
 {
     public Client ClientInstance { get; set; }
     public bool IsClientRunning { get; set; }
+    public string ClientName { get; set; }  // Add a property for the client name
     public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
     public async Task StartClient(Player p)
@@ -200,6 +201,7 @@ public class MyClient : IDisposable
             IPAddress ipAddress = IPAddress.Parse("192.168.1.114");
             int port = 11000;
             ClientInstance = new Client { Name = p.PlayerName, Socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp) };
+            ClientName = p.PlayerName;  // Assign the client name
 
             using (ClientInstance.Socket)
             {
@@ -210,7 +212,7 @@ public class MyClient : IDisposable
                     await ClientInstance.Socket.ConnectAsync(remoteEP);
                     I.LogMsg($"Socket connected to {ClientInstance.Socket.RemoteEndPoint}");
 
-                    byte[] msg = Encoding.ASCII.GetBytes($"{I.GameController.Player.GetComponent<Player>().PlayerName} said : {I.GameController.Player.PosNum.ToString()}");
+                    byte[] msg = Encoding.ASCII.GetBytes($"{ClientName} said : {p.PlayerName} - {p.Owner.PosNum}");
                     int bytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
 
                     await Task.Run(() => ListenForMessages());
@@ -241,8 +243,19 @@ public class MyClient : IDisposable
                     break;
                 }
 
-                string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                I.LogMessage($"ListenForMessages broadcasted message: {receivedMessage}", 1, Color.Green);
+                string receivedMessage = Encoding.UTF8.GetString(bytes, 0, bytesRec);
+
+                try
+                {
+                    Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
+
+                    // Log the deserialized message
+                    I.LogMsg($"Deserialized message - Type: {myMessage.MessageType}, Text: {myMessage.MessageText}");
+                }
+                catch (JsonReaderException ex)
+                {
+                    I.LogMsg($"JsonReaderException in ListenForMessages: {ex.LineNumber}, {ex.LinePosition}, {ex.Message}");
+                }
             }
         }
         catch (Exception ex)
@@ -251,6 +264,7 @@ public class MyClient : IDisposable
             IsClientRunning = false;
         }
     }
+
 
     public async Task SendMessageToServer(Message myMessage)
     {
