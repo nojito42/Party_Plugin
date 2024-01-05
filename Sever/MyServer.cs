@@ -147,10 +147,10 @@ public class MyServer : IDisposable
         try
         {
             // Include the sender's name in the message
-            string fullMessage = $"{message.Sender?.Name ?? I.GameController.Player.GetComponent<Player>().PlayerName} says: {message.MessageText}";
-            Message updatedMessage = new Message(message.MessageType, fullMessage,message.Sender);
+            //string fullMessage = $"{message.Sender?.Name ?? I.GameController.Player.GetComponent<Player>().PlayerName} says: {message.MessageText}";
+            //Message updatedMessage = new Message(message.MessageType, fullMessage,message.Sender);
 
-            string serializedMessage = JsonConvert.SerializeObject(updatedMessage);
+            string serializedMessage = JsonConvert.SerializeObject(message);
             byte[] messageBytes = Encoding.UTF8.GetBytes(serializedMessage);
 
             foreach (var client in ConnectedClients)
