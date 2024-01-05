@@ -155,7 +155,7 @@ public class MyServer : IDisposable
             string serializedMessage = JsonConvert.SerializeObject(message);
             byte[] messageBytes = Encoding.UTF8.GetBytes(serializedMessage);
 
-            foreach (var client in ConnectedClients.Where(c => c.Name != message.Sender.Name))
+            foreach (var client in ConnectedClients.Where(c => c.Name != message.Sender?.Name))
             {
                 try
                 {
