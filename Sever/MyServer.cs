@@ -123,13 +123,13 @@ public class MyServer : IDisposable
                     if (myMessage.MessageType == MessageType.Join)
                     {
                         // Extract the client's name from the join message
-                        client.Name = myMessage.MessageText;
+                        client.Name = myMessage.Sender.Name;
                         I.LogMsg($"Client {client.Name} joined the server.");
                     }
                     else
                     {
                         // Process the regular message
-                        I.LogMsg($"{client.Name} says: {myMessage.MessageText}");
+                        I.LogMsg(myMessage.ToString());
                         BroadcastMessage(myMessage);
                     }
                 }
