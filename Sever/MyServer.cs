@@ -40,6 +40,8 @@ public class Message
 public class Client
 {
     public string Name { get; set; }
+    [JsonIgnore]
+
     public Socket Socket { get; set; }
 }
 public class MyServer : IDisposable
