@@ -62,7 +62,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
         {
             if (Settings.PartySettings.PartyMemberType.Value == "Leader")
             {
-                await Client.SendMessageToServer($"LEADER({GameController.Player.RenderName}) :coucou");
+                MyServer.BroadcastMessage(new Message(MessageType.none, "coucou"));
                 LogMsg(MyServer.connectedClients.Count.ToString());
             }
             else
@@ -76,7 +76,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                     Client.StartClient();
 
                 if (Client.IsClientRunning)
-                    await Client.SendMessageToServer($"FOLLOWER({GameController.Player.RenderName}) :coucou");
+                    await Client.SendMessageToServer(new Message(MessageType.none, "coucou"));
             }
         };
         return true;

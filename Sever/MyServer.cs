@@ -88,49 +88,46 @@ public class MyServer : IPartyPluginInstance, IDisposable
 
     private async Task HandleClientAsync(Socket handler)
     {
+        byte[] bytes = new byte[1024];
+        while (true)
+        {
+            int bytesRec = await handler.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
+            string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
+
+            if (receivedMessage.Contains("<EOF>"))
+            {
+                receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
+                Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
+
+                // Broadcast the message to all connected clients
+                BroadcastMessage(myMessage);
+            }
+        }
+    }
+
+    // Updated BroadcastMessage method
+    public void BroadcastMessage(Message message)
+    {
         try
         {
-            byte[] bytes = new byte[1024];
-            while (true)
+            string serializedMessage = JsonConvert.SerializeObject(message) + "<EOF>";
+            byte[] messageBytes = Encoding.ASCII.GetBytes(serializedMessage);
+
+            foreach (var client in connectedClients)
             {
-                int bytesRec = await handler.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
-                string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-
-                if (receivedMessage.Contains("<EOF>"))
+                try
                 {
-                    receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
-                    I.LogMsg($"Text received: {receivedMessage}");
-
-                    // Broadcast the message to all connected clients
-                    BroadcastMessage(receivedMessage);
+                    client.Send(messageBytes);
+                }
+                catch (Exception ex)
+                {
+                    I.LogMsg($"Error broadcasting message to client: {ex.ToString()}");
                 }
             }
         }
         catch (Exception ex)
         {
-            I.LogMsg($"Error handling client: {ex.ToString()}");
-        }
-        finally
-        {
-            handler.Shutdown(SocketShutdown.Both);
-            connectedClients.Remove(handler); // Remove the disconnected client from the list
-        }
-    }
-
-    public void BroadcastMessage(string message)
-    {
-        byte[] messageBytes = Encoding.ASCII.GetBytes(message + "<EOF>");
-
-        foreach (var client in connectedClients)
-        {
-            try
-            {
-                client.Send(messageBytes);
-            }
-            catch (Exception ex)
-            {
-                I.LogMsg($"Error broadcasting message to client: {ex.ToString()}");
-            }
+            I.LogMsg($"Error broadcasting message: {ex.ToString()}");
         }
     }
 
@@ -219,7 +216,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
     }
 
     // New method to send a message to the server
-    public async Task SendMessageToServer(string message)
+    public async Task SendMessageToServer(Message myMessage)
     {
         try
         {
@@ -233,7 +230,10 @@ public class MyClient : IPartyPluginInstance, IDisposable
                 await client.ConnectAsync(remoteEP);
                 I.LogMsg($"Socket connected to {client.RemoteEndPoint}");
 
-                byte[] msg = Encoding.ASCII.GetBytes($"{message}<EOF>");
+                // Serialize the message to JSON, append <EOF>, and convert to bytes
+                string serializedMessage = JsonConvert.SerializeObject(myMessage) + "<EOF>";
+                byte[] msg = Encoding.ASCII.GetBytes(serializedMessage);
+
                 int bytesSent = await client.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
             }
         }
@@ -242,7 +242,6 @@ public class MyClient : IPartyPluginInstance, IDisposable
             I.LogMsg($"Error sending message to server: {e.ToString()}");
         }
     }
-
     public void Dispose()
     {
         // Dispose of any resources if needed
