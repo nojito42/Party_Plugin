@@ -22,21 +22,13 @@ public enum MessageType
     pause,
     none
 }
-public class Message
+[method: JsonConstructor]
+public class Message(MessageType messageType, string message)
 {
-    
-
     [JsonProperty]
-    public MessageType messageType;
+    public MessageType messageType = messageType;
     [JsonProperty]
-    public string message;
-
-    [JsonConstructor]
-    public Message(MessageType messageType, string message)
-    {
-        this.messageType = messageType;
-        this.message = message;
-    }
+    public string message = message;
 }
 public class MyServer : IPartyPluginInstance, IDisposable
 {

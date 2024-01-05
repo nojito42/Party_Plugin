@@ -4,28 +4,18 @@ using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared.Enums;
 using ExileCore.Shared.Helpers;
-using ExileCore.Shared.Nodes;
 using Party_Plugin.Helpers;
 using Party_Plugin.Party;
 using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.WebSockets;
-using System.Threading.Tasks;
-using System.Threading;
 using Party_Plugin.Myserver;
-using Newtonsoft.Json;
-using static Party_Plugin.Myserver.Message;
 namespace Party_Plugin;
-
-
-
 public interface IPartyPluginInstance
 {
     public PartyPlugin I { get; }
 }
-
 public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
 {
     private bool isInParty = false;
@@ -34,9 +24,6 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
     private MyClient Client;
     public Camera Cam => GameController.IngameState.Camera;
     public Element PartyUI => GameController.IngameState.IngameUi.PartyElement;
-
-
-
 
     public override bool Initialise()
     {
@@ -134,7 +121,6 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
         }
         return playersInParty;
     }
-
     public override Job Tick()
     {
         isInParty = PartyUI.Children[0].ChildCount > 0 && PartyUI.Children[0].Height > 1;
@@ -158,8 +144,6 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
 
         return base.Tick();
     }
-
-
     public override void Render()
     {
         try
@@ -184,7 +168,6 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
             LogError(ex.Message);
         }
     }
-
     public override void EntityAdded(Entity entity)
     {
     }
