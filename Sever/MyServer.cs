@@ -190,11 +190,7 @@ public class MyServer : IDisposable
                         I.LogMsg($"Unexpected error broadcasting message to client: {ex}");
                     }
                 }
-            }
-
-            // Log the broadcasted message
-            string senderName = message.Sender?.Name ?? "Leader";
-            I.LogMsg($"Broadcasted message from {senderName}: {message.MessageText}");
+            }  
         }
         catch (Exception ex)
         {
@@ -241,9 +237,9 @@ public class MyClient : IDisposable
                     await ClientInstance.Socket.ConnectAsync(remoteEP);
                     I.LogMsg($"Socket connected to {ClientInstance.Socket.RemoteEndPoint}");
 
-                    // Send the join message to the server
-                    byte[] joinMsg = Encoding.UTF8.GetBytes($"JOIN::{ClientName}");
-                    int joinBytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(joinMsg), SocketFlags.None);
+                    // Send the join message to the server using MessageType.Join
+                    var joinMessage = new Message(MessageType.Join, $"{ClientName} joined the server.", ClientInstance);
+                    await SendMessageToServer(joinMessage);
 
                     await Task.Run(() => ListenForMessages());
                 }
