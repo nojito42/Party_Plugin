@@ -116,12 +116,12 @@ public class MyServer : IDisposable
                 }
 
                 string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                I.LogMsg($"Received message: {receivedMessage}");
+                I.LogMsg($"Received message from {client.Name}: {receivedMessage}");
 
                 try
                 {
                     Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
-                    BroadcastMessage(myMessage);
+                    BroadcastMessage(myMessage, client);
                 }
                 catch (JsonReaderException ex)
                 {
@@ -139,11 +139,15 @@ public class MyServer : IDisposable
         }
     }
 
-    public void BroadcastMessage(Message message)
+    public void BroadcastMessage(Message message, Client sender)
     {
         try
         {
-            string serializedMessage = JsonConvert.SerializeObject(message);
+            // Include the sender's name in the message
+            string fullMessage = $"{sender.Name} says: {message.MessageText}";
+            Message updatedMessage = new Message(message.MessageType, fullMessage);
+
+            string serializedMessage = JsonConvert.SerializeObject(updatedMessage);
             byte[] messageBytes = Encoding.ASCII.GetBytes(serializedMessage);
 
             foreach (var client in ConnectedClients)
@@ -181,7 +185,7 @@ public class MyClient : IDisposable
     public bool IsClientRunning { get; set; }
     public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
-    public async Task StartClient()
+    public async Task StartClient(Player p)
     {
         if (IsClientRunning)
         {
@@ -195,7 +199,7 @@ public class MyClient : IDisposable
         {
             IPAddress ipAddress = IPAddress.Parse("192.168.1.114");
             int port = 11000;
-            ClientInstance = new Client { Socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp) };
+            ClientInstance = new Client { Name = p.PlayerName, Socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp) };
 
             using (ClientInstance.Socket)
             {

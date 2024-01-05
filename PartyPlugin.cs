@@ -27,21 +27,21 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
     private MyClient Client;
     public Camera Cam => GameController.IngameState.Camera;
     public Element PartyUI => GameController.IngameState.IngameUi.PartyElement;
-
+    public Player P => GameController.Player.GetComponent<Player>();
     public override bool Initialise()
     {
         Settings.PartySettings.PartyMemberType.Values.AddRange(new string[]{
             "Follower","Leader"
         });
 
-        Settings.Connect.OnPressed += delegate
+        Settings.Connect.OnPressed += async delegate
         {
             if (Settings.PartySettings.PartyMemberType.Value == "Leader")
             {
                 if (MyServer == null)
                 {
                     MyServer = new MyServer();
-                    MyServer.StartServer();
+                   await MyServer.StartServer();
                 }
             }
             else
@@ -49,12 +49,12 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                 if (Client == null)
                 {
                     Client = new MyClient();
-                    Client.StartClient();
+                    await Client.StartClient(GameController.Player.GetComponent<Player>());
                 }
                 else
                 {
                     if (!Client.IsClientRunning)
-                        Client.StartClient();
+                       await Client.StartClient(GameController.Player.GetComponent<Player>());
                 }
             }
         };
@@ -62,7 +62,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
         {
             if (Settings.PartySettings.PartyMemberType.Value == "Leader")
             {
-                MyServer.BroadcastMessage(new Message(MessageType.None, "coucou"));
+                MyServer.BroadcastMessage(new Message(MessageType.None, "coucou"),Client.ClientInstance);
                 LogMsg(MyServer.ConnectedClients.Count.ToString());
             }
             else
@@ -70,10 +70,10 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                 if (Client == null)
                 {
                     Client = new MyClient();
-                    Client.StartClient();
+                    await Client.StartClient(P);
                 }
                 if (!Client.IsClientRunning)
-                    Client.StartClient();
+                    await Client.StartClient(P);
 
                 if (Client.IsClientRunning)
                     await Client.SendMessageToServer(new Message(MessageType.None, "coucou"));
