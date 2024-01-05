@@ -117,16 +117,28 @@ public class MyServer : IDisposable
                 }
 
                 string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                I.LogMsg($"{client.Name} says: {receivedMessage}");
 
-                try
+                // Check if this is a join message
+                if (receivedMessage.StartsWith("JOIN::"))
                 {
-                    Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
-                    BroadcastMessage(myMessage, client);
+                    // Extract the client's name from the join message
+                    client.Name = receivedMessage.Substring("JOIN::".Length);
+                    I.LogMsg($"Client {client.Name} joined the server.");
                 }
-                catch (JsonReaderException ex)
+                else
                 {
-                    I.LogMsg($"JsonReaderException in HandleClientAsync: {ex.LineNumber}, {ex.LinePosition}, {ex.Message}");
+                    // Process the regular message
+                    I.LogMsg($"{client.Name} says: {receivedMessage}");
+
+                    try
+                    {
+                        Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
+                        BroadcastMessage(myMessage, client);
+                    }
+                    catch (JsonReaderException ex)
+                    {
+                        I.LogMsg($"JsonReaderException in HandleClientAsync: {ex.LineNumber}, {ex.LinePosition}, {ex.Message}");
+                    }
                 }
             }
         }
@@ -214,10 +226,11 @@ public class MyClient : IDisposable
                     await ClientInstance.Socket.ConnectAsync(remoteEP);
                     I.LogMsg($"Socket connected to {ClientInstance.Socket.RemoteEndPoint}");
 
-                    // Send the client's name to the server
-                    byte[] nameMsg = Encoding.ASCII.GetBytes($"{ClientName} joined the server.");
-                    int nameBytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(nameMsg), SocketFlags.None);
+                    // Send the join message to the server
+                    byte[] joinMsg = Encoding.ASCII.GetBytes($"JOIN::{ClientName}");
+                    int joinBytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(joinMsg), SocketFlags.None);
 
+                    // Send the regular message to the server
                     byte[] msg = Encoding.ASCII.GetBytes($"{ClientName} said: {p.PlayerName} - {p.Owner.PosNum}");
                     int bytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
 
