@@ -258,7 +258,7 @@ public class MyClient : IDisposable
                     Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
 
                     // Log the deserialized message
-                    I.LogMsg($"Deserialized message - Type: {myMessage.MessageType}, Text: {myMessage.MessageText}");
+                    I.LogMsg(myMessage.ToString());
                 }
                 catch (JsonReaderException ex)
                 {
