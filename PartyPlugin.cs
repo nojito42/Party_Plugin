@@ -23,8 +23,9 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
 {
     private bool isInParty = false;
     private Party.Party Party = new();
-    private MyServer MyServer;
-    private MyClient Client;
+    private MyServer MyServer = new();
+    private MyClient Client = new();
+
     public Camera Cam => GameController.IngameState.Camera;
     public Element PartyUI => GameController.IngameState.IngameUi.PartyElement;
     public Player P => GameController.Player.GetComponent<Player>();
@@ -40,8 +41,12 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
             {
                 if (MyServer == null)
                 {
-                    MyServer = new MyServer();
-                   await MyServer.StartServer();
+                    await MyServer.StartServer();
+                }
+                else
+                {
+                    if (!MyServer.IsServerRunning)
+                        await MyServer.StartServer();
                 }
             }
             else
