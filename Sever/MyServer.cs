@@ -15,7 +15,8 @@ public enum MessageType
     Map,
     Act,
     Pause,
-    None
+    None,
+    Join,
 }
 public class Message
 {
@@ -92,7 +93,7 @@ public class MyServer : IDisposable
         }
         catch (Exception e)
         {
-            I.LogMsg($"Server error: {e.ToString()}");
+            I.LogMsg($"Server error: {e}");
         }
     }
 
@@ -113,29 +114,28 @@ public class MyServer : IDisposable
                     break;
                 }
 
-                string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
+                string receivedMessage = Encoding.UTF8.GetString(bytes, 0, bytesRec);
 
-                // Check if this is a join message
-                if (receivedMessage.StartsWith("JOIN::"))
+                try
                 {
-                    // Extract the client's name from the join message
-                    client.Name = receivedMessage.Substring("JOIN::".Length);
-                    I.LogMsg($"Client {client.Name} joined the server.");
-                }
-                else
-                {
-                    // Process the regular message
-                    I.LogMsg($"{client.Name} says: {receivedMessage}");
+                    Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
 
-                    try
+                    if (myMessage.MessageType == MessageType.Join)
                     {
-                        Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
+                        // Extract the client's name from the join message
+                        client.Name = myMessage.MessageText;
+                        I.LogMsg($"Client {client.Name} joined the server.");
+                    }
+                    else
+                    {
+                        // Process the regular message
+                        I.LogMsg($"{client.Name} says: {myMessage.MessageText}");
                         BroadcastMessage(myMessage);
                     }
-                    catch (JsonReaderException ex)
-                    {
-                        I.LogMsg($"JsonReaderException in HandleClientAsync: {ex.LineNumber}, {ex.LinePosition}, {ex.Message}");
-                    }
+                }
+                catch (JsonReaderException ex)
+                {
+                    I.LogMsg($"JsonReaderException in HandleClientAsync: {ex.LineNumber}, {ex.LinePosition}, {ex.Message}");
                 }
             }
         }
@@ -145,7 +145,7 @@ public class MyServer : IDisposable
         }
         catch (Exception ex)
         {
-            I.LogMsg($"Unexpected error in HandleClientAsync: {ex.ToString()}");
+            I.LogMsg($"Unexpected error in HandleClientAsync: {ex}");
         }
     }
 
@@ -172,13 +172,13 @@ public class MyServer : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    I.LogMsg($"Unexpected error broadcasting message to client: {ex.ToString()}");
+                    I.LogMsg($"Unexpected error broadcasting message to client: {ex}");
                 }
             }
         }
         catch (Exception ex)
         {
-            I.LogMsg($"Unexpected error broadcasting message: {ex.ToString()}");
+            I.LogMsg($"Unexpected error broadcasting message: {ex}");
         }
     }
 
@@ -224,23 +224,20 @@ public class MyClient : IDisposable
                     byte[] joinMsg = Encoding.UTF8.GetBytes($"JOIN::{ClientName}");
                     int joinBytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(joinMsg), SocketFlags.None);
 
-                    // Send the regular message to the server
-                    byte[] msg = Encoding.UTF8.GetBytes($"{ClientName} said: {p.PlayerName} - {p.Owner.PosNum}");
-                    int bytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
-
                     await Task.Run(() => ListenForMessages());
                 }
                 catch (Exception e)
                 {
-                    I.LogMsg($"Client connection error: {e.ToString()}");
+                    I.LogMsg($"Client connection error: {e}");
                 }
             }
         }
         catch (Exception e)
         {
-            I.LogMsg($"Client error: {e.ToString()}");
+            I.LogMsg($"Client error: {e}");
         }
     }
+
 
     private async Task ListenForMessages()
     {
@@ -273,7 +270,7 @@ public class MyClient : IDisposable
         }
         catch (Exception ex)
         {
-            I.LogMsg($"Error while listening for messages: {ex.ToString()}");
+            I.LogMsg($"Error while listening for messages: {ex}");
             IsClientRunning = false;
         }
     }
@@ -289,7 +286,7 @@ public class MyClient : IDisposable
         }
         catch (Exception e)
         {
-            I.LogMsg($"Error sending message to server: {e.ToString()}");
+            I.LogMsg($"Error sending message to server: {e}");
         }
     }
 
