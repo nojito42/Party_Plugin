@@ -277,7 +277,11 @@ public class MyClient : IDisposable
                     Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
 
                     // Log the deserialized message
-                    I.LogMsg(myMessage.ToString());
+                    if(myMessage.Sender == null || myMessage.Sender.Name != ClientName)
+                    {
+                        I.LogMsg(myMessage.ToString());
+                    }
+              
                 }
                 catch (JsonReaderException ex)
                 {
