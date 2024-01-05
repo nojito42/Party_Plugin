@@ -1,20 +1,14 @@
 ﻿using ExileCore;
 using ExileCore.PoEMemory.Components;
 using Newtonsoft.Json;
-using Party_Plugin;
-using SharpDX;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
-
 namespace Party_Plugin.Myserver;
-// MessageType Enum
 public enum MessageType
 {
     Hidout,
@@ -23,8 +17,6 @@ public enum MessageType
     Pause,
     None
 }
-
-// Message Class
 public class Message
 {
     [JsonProperty("messageType")]
@@ -40,18 +32,11 @@ public class Message
         MessageText = messageText;
     }
 }
-
-
-
-// Client Class
 public class Client
 {
     public string Name { get; set; }
     public Socket Socket { get; set; }
 }
-
-// MyServer Class
-// MyServer Class
 public class MyServer : IDisposable
 {
     public bool IsServerRunning { get; set; }
@@ -157,11 +142,11 @@ public class MyServer : IDisposable
         try
         {
             // Include the sender's name in the message
-            string fullMessage = $"{sender?.Name ?? "Unknown"} says: {message.MessageText}";
+            string fullMessage = $"{sender?.Name ?? I.GameController.Player.GetComponent<Player>().PlayerName} says: {message.MessageText}";
             Message updatedMessage = new Message(message.MessageType, fullMessage);
 
             string serializedMessage = JsonConvert.SerializeObject(updatedMessage);
-            byte[] messageBytes = Encoding.ASCII.GetBytes(serializedMessage);
+            byte[] messageBytes = Encoding.UTF8.GetBytes(serializedMessage);
 
             foreach (var client in ConnectedClients)
             {
@@ -190,9 +175,6 @@ public class MyServer : IDisposable
         listener.Dispose();
     }
 }
-
-
-// MyClient Class
 public class MyClient : IDisposable
 {
     public Client ClientInstance { get; set; }
@@ -227,11 +209,11 @@ public class MyClient : IDisposable
                     I.LogMsg($"Socket connected to {ClientInstance.Socket.RemoteEndPoint}");
 
                     // Send the join message to the server
-                    byte[] joinMsg = Encoding.ASCII.GetBytes($"JOIN::{ClientName}");
+                    byte[] joinMsg = Encoding.UTF8.GetBytes($"JOIN::{ClientName}");
                     int joinBytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(joinMsg), SocketFlags.None);
 
                     // Send the regular message to the server
-                    byte[] msg = Encoding.ASCII.GetBytes($"{ClientName} said: {p.PlayerName} - {p.Owner.PosNum}");
+                    byte[] msg = Encoding.UTF8.GetBytes($"{ClientName} said: {p.PlayerName} - {p.Owner.PosNum}");
                     int bytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
 
                     await Task.Run(() => ListenForMessages());
@@ -289,7 +271,7 @@ public class MyClient : IDisposable
         try
         {
             string serializedMessage = JsonConvert.SerializeObject(myMessage);
-            byte[] msg = Encoding.ASCII.GetBytes(serializedMessage);
+            byte[] msg = Encoding.UTF8.GetBytes(serializedMessage);
 
             int bytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
         }
@@ -304,6 +286,3 @@ public class MyClient : IDisposable
         // Dispose of any resources if needed
     }
 }
-
-
-
