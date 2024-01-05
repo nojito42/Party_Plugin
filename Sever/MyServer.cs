@@ -89,16 +89,40 @@ public class MyServer : IPartyPluginInstance, IDisposable
     private async Task HandleClientAsync(Socket handler)
     {
         byte[] bytes = new byte[1024];
-        while (true)
+        try
         {
-            int bytesRec = await handler.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
-            string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
+            while (true)
+            {
+                int bytesRec = await handler.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
+                string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
 
-            // Deserialize the received message
-            Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
+                // Log the received message
+                I.LogMsg($"Received message: {receivedMessage}");
 
-            // Broadcast the message to all connected clients
-            BroadcastMessage(myMessage);
+                try
+                {
+                    // Deserialize the received message
+                    Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
+
+                    // Broadcast the message to all connected clients
+                    BroadcastMessage(myMessage);
+                }
+                catch (JsonReaderException ex)
+                {
+                    // Log the specific error and additional information
+                    I.LogMsg($"JsonReaderException in HandleClientAsync: {ex.LineNumber}, {ex.LinePosition}, {ex.Message}");
+                }
+            }
+        }
+        catch (SocketException ex)
+        {
+            // Log the specific error and additional information
+            I.LogMsg($"SocketException in HandleClientAsync: {ex.SocketErrorCode}, {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            // Log any other unexpected exceptions
+            I.LogMsg($"Unexpected error in HandleClientAsync: {ex.ToString()}");
         }
     }
 
@@ -174,7 +198,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
                     await client.ConnectAsync(remoteEP);
                     I.LogMsg($"Socket connected to {client.RemoteEndPoint}");
 
-                    byte[] msg = Encoding.ASCII.GetBytes($"{I.GameController.Player.GetComponent<Player>().PlayerName} said : {I.GameController.Player.PosNum.ToString()} <EOF>");
+                    byte[] msg = Encoding.ASCII.GetBytes($"{I.GameController.Player.GetComponent<Player>().PlayerName} said : {I.GameController.Player.PosNum.ToString()}");
                     int bytesSent = await client.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
 
                     // Start a separate thread to listen for incoming messages
@@ -237,7 +261,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
                 I.LogMsg($"Socket connected to {client.RemoteEndPoint}");
 
                 // Serialize the message to JSON, append <EOF>, and convert to bytes
-                string serializedMessage = JsonConvert.SerializeObject(myMessage) + "<EOF>";
+                string serializedMessage = JsonConvert.SerializeObject(myMessage);
                 byte[] msg = Encoding.ASCII.GetBytes(serializedMessage);
 
                 int bytesSent = await client.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
