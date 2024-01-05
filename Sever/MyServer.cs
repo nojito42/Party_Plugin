@@ -36,6 +36,11 @@ public class Message
         MessageText = messageText;
         Sender = sender;
     }
+
+    public override string ToString()
+    {
+        return $"Message: {MessageType}, {MessageText}, {Sender?.Name ?? "LEADER"}";
+    }
 }
 public class Client
 {
