@@ -11,6 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Party_Plugin.Myserver;
+using ImGuiNET;
+using System.Windows.Forms;
+using Message = Party_Plugin.Myserver.Message;
 namespace Party_Plugin;
 public interface IPartyPluginInstance
 {
@@ -27,13 +30,13 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
 
     public override bool Initialise()
     {
-        Settings.PartyMemberType.Values.AddRange(new string[]{
+        Settings.PartySettings.PartyMemberType.Values.AddRange(new string[]{
             "Follower","Leader"
         });
 
         Settings.Connect.OnPressed += delegate
         {
-            if (Settings.PartyMemberType.Value == "Leader")
+            if (Settings.PartySettings.PartyMemberType.Value == "Leader")
             {
                 if (MyServer == null)
                 {
@@ -57,10 +60,9 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
         };
         Settings.Foo.OnPressed += async delegate
         {
-            if (Settings.PartyMemberType.Value == "Leader")
+            if (Settings.PartySettings.PartyMemberType.Value == "Leader")
             {
-                var mess = new Message(MessageType.none, "coucou");
-                MyServer.BroadcastMessage(mess);
+                MyServer.BroadcastMessage(new Message(MessageType.none, "coucou"));
                 LogMsg(MyServer.connectedClients.Count.ToString());
             }
             else
@@ -123,9 +125,10 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
     }
     public override Job Tick()
     {
-        isInParty = PartyUI.Children[0].ChildCount > 0 && PartyUI.Children[0].Height > 1;
+        isInParty = PartyUI != null && PartyUI.Height > 1;
         if (isInParty && GameController.InGame)
         {
+            LogMessage("PartyPlugin: In Party");
             List<PartyFoe> partyFoes;
 
             partyFoes = GetPlayerInfoElementList(GameController.EntityListWrapper.ValidEntitiesByType[EntityType.Player]);
@@ -134,39 +137,89 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
 
             foreach (var item in partyFoes)
             {
-                if (!Settings.PartyMembers.Values.Contains(item.FoeName))
+                if (!Settings.PartySettings.PartyMembers.Values.Contains(item.FoeName))
                 {
-                    item.I.LogError("error");
-                    Settings.PartyMembers.Values.Add(item.FoeName);
+                    Settings.PartySettings.PartyMembers.Values.Add(item.FoeName);
                 }
             }
+        }
+        else if (!isInParty)
+        {
+            LogMessage("PartyPlugin: Not In Party");
+            Party.Foes.Clear();
         }
 
         return base.Tick();
     }
     public override void Render()
     {
-        try
-        {
-            Party.Foes.ForEach(e =>
-            {
-                Graphics.DrawFrame(e.TPButton.GetClientRectCache, Color.Red, 1);
-                if (e.Foe != null)
-                {
 
-                    var wts = GameController.IngameState.Camera.WorldToScreen(e.Foe.Owner.PosNum);
-                    if (GameController.Window.GetWindowRectangle().Contains(wts))
-                    {
-                        //Graphics.DrawBoundingBoxInWorld(e.PartyPlayer.AsObject<Entity>().PosNum,Color.Red,e.PartyPlayer.AsObject<Entity>().BoundsCenterPosNum,10.0f);
-                        this.DrawEllipseToWorld(e.Foe.Owner.PosNum, 20, 25, 2, new Color(80, 0, 1, 80));
-                    }
-                }
-            });
-        }
-        catch (Exception ex)
+        Party.Foes?.ForEach(e =>
         {
-            LogError(ex.Message);
+            Graphics.DrawFrame(e.TPButton.GetClientRectCache, Color.Red, 1);
+            if (e.Foe != null)
+            {
+
+                var wts = GameController.IngameState.Camera.WorldToScreen(e.Foe.Owner.PosNum);
+                if (GameController.Window.GetWindowRectangle().Contains(wts))
+                {
+                    this.DrawEllipseToWorld(e.Foe.Owner.PosNum, 20, 25, 2, new Color(80, 0, 1, 80));
+                }
+            }
+        });
+        FooUiTest();
+
+        Graphics.DrawFrame(GameController.IngameState.IngameUi.SkillBar.GetClientRectCache, Color.Red, 2);
+
+     
+    }
+
+    public void FooUiTest()
+    {
+        if (Input.IsKeyDown(Keys.LShiftKey) && Settings.PartySettings.PartyMemberType.Value == "Leader")
+        {
+            var test = GameController.IngameState.IngameUi.SkillBar.GetClientRectCache;
+
+            // Set the window position
+            ImGui.SetNextWindowPos(new System.Numerics.Vector2(test.TopLeft.X, test.TopLeft.Y -20));
+
+            // Begin a window with no title bar, no resize, and no scrollbar
+            ImGui.Begin("", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar);
+
+            // Set the cursor position relative to the existing ImGui frame
+            ImGui.SetCursorPos(new System.Numerics.Vector2(ImGui.GetCursorPosX(), ImGui.GetCursorPosY() - 10));
+
+            // Draw the first button
+            if (ImGui.Button("H"))
+            {
+                // Handle button click
+            }
+
+            // Move to the next button position
+            ImGui.SameLine();
+            ImGui.SetCursorPos(new System.Numerics.Vector2(ImGui.GetCursorPosX() + 10, ImGui.GetCursorPosY()));
+
+            // Draw the second button
+            if (ImGui.Button("P"))
+            {
+                // Handle button click
+            }
+
+            // Move to the next button position
+            ImGui.SameLine();
+            ImGui.SetCursorPos(new System.Numerics.Vector2(ImGui.GetCursorPosX() + 10, ImGui.GetCursorPosY()));
+
+            // Draw the third button
+            if (ImGui.Button("M"))
+            {
+                // Handle button click
+            }
+
+            // End the window
+            ImGui.End();
         }
+
+
     }
     public override void EntityAdded(Entity entity)
     {

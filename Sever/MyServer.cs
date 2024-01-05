@@ -30,11 +30,17 @@ public class Message(MessageType messageType, string message)
     [JsonProperty]
     public string message = message;
 }
+
+public class Client
+{
+    public string Name;
+    public Socket Socket;
+}
 public class MyServer : IPartyPluginInstance, IDisposable
 {
     public bool isServerRunning = false;
     private Socket listener;
-    public List<Socket> connectedClients = new List<Socket>(); // Maintain a list of connected clients
+    public HashSet<Socket> connectedClients = [];
 
     public void StartServer()
     {
@@ -54,7 +60,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
 
                 using (listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
                 {
-                    IPEndPoint localEndPoint = new IPEndPoint(ipAddress, port);
+                    IPEndPoint localEndPoint = new(ipAddress, port);
 
                     listener.Bind(localEndPoint);
                     listener.Listen(10);
@@ -64,6 +70,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
                         I.LogMsg($"Server is listening on {localEndPoint} - co {connectedClients.Count}");
 
                         Socket handler = await listener.AcceptAsync();
+                        if(!connectedClients.Contains(handler))
                         connectedClients.Add(handler);
 
                         _ = HandleClientAsync(handler);
@@ -90,8 +97,9 @@ public class MyServer : IPartyPluginInstance, IDisposable
                 if (receivedMessage.Contains("<EOF>"))
                 {
                     receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
-                    I.LogMsg($"Text received: {receivedMessage}");
                     var serializedMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
+                    I.LogMsg($"Text received: {serializedMessage}");
+                    
                     BroadcastMessage(serializedMessage);
                 }
             }
@@ -100,6 +108,8 @@ public class MyServer : IPartyPluginInstance, IDisposable
         finally
         {
             //I.LogMsg($"finally");
+            handler.Shutdown(SocketShutdown.Both);
+            connectedClients.Remove(handler); // Remove the disconnected client from the list
         }
     }
 
@@ -107,7 +117,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
     {
         string serializedMessage = JsonConvert.SerializeObject(message);
         byte[] messageBytes = Encoding.ASCII.GetBytes(serializedMessage + "<EOF>");
-        connectedClients.ForEach(c =>
+        connectedClients.ToList().ForEach(c =>
         {
             try { c.Send(messageBytes); } catch (Exception ex) { }
         });
