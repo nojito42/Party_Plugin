@@ -3,6 +3,7 @@ using ExileCore.PoEMemory.Components;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -64,7 +65,6 @@ public class MyServer : IDisposable
             I.LogMsg("Server is already running.");
             return;
         }
-
         IsServerRunning = true;
 
         try
@@ -74,7 +74,7 @@ public class MyServer : IDisposable
 
             using (listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
             {
-                IPEndPoint localEndPoint = new IPEndPoint(ipAddress, port);
+                IPEndPoint localEndPoint = new(ipAddress, port);
 
                 listener.Bind(localEndPoint);
                 listener.Listen(10);
@@ -122,13 +122,11 @@ public class MyServer : IDisposable
 
                     if (myMessage.MessageType == MessageType.Join)
                     {
-                        // Extract the client's name from the join message
                         client.Name = myMessage.Sender.Name;
-                        I.LogMsg($"Client {client.Name} joined the server.");
+                        BroadcastMessage(myMessage);
                     }
                     else
                     {
-                        // Process the regular message
                         I.LogMsg(myMessage.ToString());
                         BroadcastMessage(myMessage);
                     }
@@ -153,14 +151,11 @@ public class MyServer : IDisposable
     {
         try
         {
-            // Include the sender's name in the message
-            //string fullMessage = $"{message.Sender?.Name ?? I.GameController.Player.GetComponent<Player>().PlayerName} says: {message.MessageText}";
-            //Message updatedMessage = new Message(message.MessageType, fullMessage,message.Sender);
 
             string serializedMessage = JsonConvert.SerializeObject(message);
             byte[] messageBytes = Encoding.UTF8.GetBytes(serializedMessage);
 
-            foreach (var client in ConnectedClients)
+            foreach (var client in ConnectedClients.Where(c => c.Name != message.Sender.Name))
             {
                 try
                 {
