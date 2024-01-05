@@ -94,14 +94,11 @@ public class MyServer : IPartyPluginInstance, IDisposable
             int bytesRec = await handler.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
             string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
 
-            if (receivedMessage.Contains("<EOF>"))
-            {
-                receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
-                Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
+            // Deserialize the received message
+            Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
 
-                // Broadcast the message to all connected clients
-                BroadcastMessage(myMessage);
-            }
+            // Broadcast the message to all connected clients
+            BroadcastMessage(myMessage);
         }
     }
 
@@ -110,7 +107,8 @@ public class MyServer : IPartyPluginInstance, IDisposable
     {
         try
         {
-            string serializedMessage = JsonConvert.SerializeObject(message) + "<EOF>";
+            // Serialize the message to JSON
+            string serializedMessage = JsonConvert.SerializeObject(message);
             byte[] messageBytes = Encoding.ASCII.GetBytes(serializedMessage);
 
             foreach (var client in connectedClients)
@@ -119,17 +117,25 @@ public class MyServer : IPartyPluginInstance, IDisposable
                 {
                     client.Send(messageBytes);
                 }
+                catch (SocketException ex)
+                {
+                    // Log the specific error and additional information
+                    I.LogMsg($"Error broadcasting message to client: {ex.SocketErrorCode}, {ex.Message}");
+                }
                 catch (Exception ex)
                 {
-                    I.LogMsg($"Error broadcasting message to client: {ex.ToString()}");
+                    // Log any other unexpected exceptions
+                    I.LogMsg($"Unexpected error broadcasting message to client: {ex.ToString()}");
                 }
             }
         }
         catch (Exception ex)
         {
-            I.LogMsg($"Error broadcasting message: {ex.ToString()}");
+            // Log any other unexpected exceptions
+            I.LogMsg($"Unexpected error broadcasting message: {ex.ToString()}");
         }
     }
+
 
     public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
