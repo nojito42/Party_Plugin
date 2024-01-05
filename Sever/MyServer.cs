@@ -214,7 +214,11 @@ public class MyClient : IDisposable
                     await ClientInstance.Socket.ConnectAsync(remoteEP);
                     I.LogMsg($"Socket connected to {ClientInstance.Socket.RemoteEndPoint}");
 
-                    byte[] msg = Encoding.ASCII.GetBytes($"{ClientName} said : {p.PlayerName} - {p.Owner.PosNum}");
+                    // Send the client's name to the server
+                    byte[] nameMsg = Encoding.ASCII.GetBytes($"{ClientName} joined the server.");
+                    int nameBytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(nameMsg), SocketFlags.None);
+
+                    byte[] msg = Encoding.ASCII.GetBytes($"{ClientName} said: {p.PlayerName} - {p.Owner.PosNum}");
                     int bytesSent = await ClientInstance.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
 
                     await Task.Run(() => ListenForMessages());
