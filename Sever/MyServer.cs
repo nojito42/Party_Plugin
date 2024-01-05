@@ -151,31 +151,57 @@ public class MyServer : IDisposable
     {
         try
         {
-
             string serializedMessage = JsonConvert.SerializeObject(message);
             byte[] messageBytes = Encoding.UTF8.GetBytes(serializedMessage);
 
-            foreach (var client in ConnectedClients.Where(c => c.Name != message.Sender?.Name))
+            if (message.Sender != null)
             {
-                try
+                foreach (var client in ConnectedClients.Where(c => c != message.Sender))
                 {
-                    client.Socket.Send(messageBytes);
-                }
-                catch (SocketException ex)
-                {
-                    I.LogMsg($"Error broadcasting message to client: {ex.SocketErrorCode}, {ex.Message}");
-                }
-                catch (Exception ex)
-                {
-                    I.LogMsg($"Unexpected error broadcasting message to client: {ex}");
+                    try
+                    {
+                        client.Socket.Send(messageBytes);
+                    }
+                    catch (SocketException ex)
+                    {
+                        I.LogMsg($"Error broadcasting message to client: {ex.SocketErrorCode}, {ex.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        I.LogMsg($"Unexpected error broadcasting message to client: {ex}");
+                    }
                 }
             }
+            else
+            {
+                // If the sender is null, broadcast as "Leader"
+                foreach (var client in ConnectedClients)
+                {
+                    try
+                    {
+                        client.Socket.Send(messageBytes);
+                    }
+                    catch (SocketException ex)
+                    {
+                        I.LogMsg($"Error broadcasting message to client: {ex.SocketErrorCode}, {ex.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        I.LogMsg($"Unexpected error broadcasting message to client: {ex}");
+                    }
+                }
+            }
+
+            // Log the broadcasted message
+            string senderName = message.Sender?.Name ?? "Leader";
+            I.LogMsg($"Broadcasted message from {senderName}: {message.MessageText}");
         }
         catch (Exception ex)
         {
             I.LogMsg($"Unexpected error broadcasting message: {ex}");
         }
     }
+
 
     public void Dispose()
     {
