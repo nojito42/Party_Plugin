@@ -51,6 +51,7 @@ public class Client
 }
 
 // MyServer Class
+// MyServer Class
 public class MyServer : IDisposable
 {
     public bool IsServerRunning { get; set; }
@@ -144,7 +145,7 @@ public class MyServer : IDisposable
         try
         {
             // Include the sender's name in the message
-            string fullMessage = $"{sender?.Name ?? I.GameController.Player.GetComponent<Player>().PlayerName} says: {message.MessageText}";
+            string fullMessage = $"{sender?.Name ?? "Unknown"} says: {message.MessageText}";
             Message updatedMessage = new Message(message.MessageType, fullMessage);
 
             string serializedMessage = JsonConvert.SerializeObject(updatedMessage);
@@ -177,6 +178,7 @@ public class MyServer : IDisposable
         listener.Dispose();
     }
 }
+
 
 // MyClient Class
 public class MyClient : IDisposable
@@ -265,7 +267,6 @@ public class MyClient : IDisposable
         }
     }
 
-
     public async Task SendMessageToServer(Message myMessage)
     {
         try
@@ -286,5 +287,6 @@ public class MyClient : IDisposable
         // Dispose of any resources if needed
     }
 }
+
 
 
