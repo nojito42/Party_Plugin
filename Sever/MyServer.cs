@@ -28,10 +28,10 @@ public enum MessageType
 [method: JsonConstructor]
 public class Message
 {
-    [JsonProperty]
+    [JsonProperty("messageType")]
     public MessageType MessageType { get; set; }
 
-    [JsonProperty]
+    [JsonProperty("messageText")]
     public string MessageText { get; set; }
 
     public Message(MessageType messageType, string messageText)
@@ -40,6 +40,8 @@ public class Message
         MessageText = messageText;
     }
 }
+
+
 
 // Client Class
 public class Client
