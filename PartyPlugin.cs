@@ -62,8 +62,19 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
         {
             if (Settings.PartySettings.PartyMemberType.Value == "Leader")
             {
-                MyServer.BroadcastMessage(new Message(MessageType.None, "coucou"),Client.ClientInstance);
-                LogMsg(MyServer.ConnectedClients.Count.ToString());
+                if (MyServer != null)
+                {
+                    // Check if ClientInstance is not null before using it
+                    if (Client != null && Client.ClientInstance != null)
+                    {
+                        MyServer.BroadcastMessage(new Message(MessageType.None, "coucou"), Client.ClientInstance);
+                        LogMsg(MyServer.ConnectedClients.Count.ToString());
+                    }
+                    else
+                    {
+                        LogMsg("Client or ClientInstance is null");
+                    }
+                }
             }
             else
             {
@@ -75,8 +86,11 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                 if (!Client.IsClientRunning)
                     await Client.StartClient(P);
 
-                if (Client.IsClientRunning)
+                // Check if ClientInstance is not null before using it
+                if (Client != null && Client.ClientInstance != null)
                     await Client.SendMessageToServer(new Message(MessageType.None, "coucou"));
+                else
+                    LogMsg("Client or ClientInstance is null");
             }
         };
         return true;
