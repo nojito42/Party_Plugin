@@ -179,47 +179,24 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
         if (Input.IsKeyDown(Keys.LShiftKey) && Settings.PartySettings.PartyMemberType.Value == "Leader")
         {
             var test = GameController.IngameState.IngameUi.SkillBar.GetClientRectCache;
-
-            // Set the window position
             ImGui.SetNextWindowPos(new System.Numerics.Vector2(test.TopLeft.X, test.TopLeft.Y -20));
-
-            // Begin a window with no title bar, no resize, and no scrollbar
             ImGui.Begin("", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar);
-
-            // Set the cursor position relative to the existing ImGui frame
             ImGui.SetCursorPos(new System.Numerics.Vector2(ImGui.GetCursorPosX(), ImGui.GetCursorPosY() - 10));
-
-            // Draw the first button
             if (ImGui.Button("H"))
             {
-                // Handle button click
             }
-
-            // Move to the next button position
             ImGui.SameLine();
             ImGui.SetCursorPos(new System.Numerics.Vector2(ImGui.GetCursorPosX() + 10, ImGui.GetCursorPosY()));
-
-            // Draw the second button
             if (ImGui.Button("P"))
             {
-                // Handle button click
             }
-
-            // Move to the next button position
             ImGui.SameLine();
             ImGui.SetCursorPos(new System.Numerics.Vector2(ImGui.GetCursorPosX() + 10, ImGui.GetCursorPosY()));
-
-            // Draw the third button
             if (ImGui.Button("M"))
             {
-                // Handle button click
             }
-
-            // End the window
             ImGui.End();
         }
-
-
     }
     public override void EntityAdded(Entity entity)
     {

@@ -40,7 +40,8 @@ public class MyServer : IPartyPluginInstance, IDisposable
 {
     public bool isServerRunning = false;
     private Socket listener;
-    public HashSet<Socket> connectedClients = [];
+    public HashSet<MyClient> connectedClients = new HashSet<MyClient>();
+    public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
     public void StartServer()
     {
@@ -70,8 +71,10 @@ public class MyServer : IPartyPluginInstance, IDisposable
                         I.LogMsg($"Server is listening on {localEndPoint} - co {connectedClients.Count}");
 
                         Socket handler = await listener.AcceptAsync();
-                        if(!connectedClients.Contains(handler))
-                        connectedClients.Add(handler);
+                        if (!connectedClients.Any(c => c.Socket == handler))
+                        {
+                            connectedClients.Add(new MyClient { Socket = handler });
+                        }
 
                         _ = HandleClientAsync(handler);
                     }
@@ -94,36 +97,33 @@ public class MyServer : IPartyPluginInstance, IDisposable
                 int bytesRec = await handler.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
                 string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
 
-                if (receivedMessage.Contains("<EOF>"))
-                {
-                    receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
-                    var serializedMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
-                    I.LogMsg($"Text received: {serializedMessage}");
-                    
-                    BroadcastMessage(serializedMessage);
-                }
+                receivedMessage = receivedMessage[..receivedMessage.IndexOf("<EOF>")];
+                var serializedMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
+                I.LogMsg($"Text received: {serializedMessage}");
+
+                BroadcastMessage(serializedMessage);
             }
         }
-        catch (Exception ex) { }
+        catch (Exception ex)
+        {
+            I.LogMsg($"Error handling client: {ex}");
+        }
         finally
         {
-            //I.LogMsg($"finally");
-            handler.Shutdown(SocketShutdown.Both);
-            connectedClients.Remove(handler); // Remove the disconnected client from the list
+            //connectedClients.RemoveWhere(c => c.Socket == null || !c.Socket.Connected);
         }
     }
 
     public void BroadcastMessage(Message message)
     {
         string serializedMessage = JsonConvert.SerializeObject(message);
-        byte[] messageBytes = Encoding.ASCII.GetBytes(serializedMessage + "<EOF>");
+        byte[] messageBytes = Encoding.ASCII.GetBytes(serializedMessage);
         connectedClients.ToList().ForEach(c =>
         {
-            try { c.Send(messageBytes); } catch (Exception ex) { }
+            try { c.Socket.Send(messageBytes); }
+            catch (Exception ex) { I.LogMsg($"Error broadcasting message: {ex}"); }
         });
     }
-
-    public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
     public void Dispose()
     {
@@ -133,7 +133,9 @@ public class MyServer : IPartyPluginInstance, IDisposable
 public class MyClient : IPartyPluginInstance, IDisposable
 {
     public bool IsClientRunning;
-    private Socket client;
+    private Client client;
+    public Socket Socket;
+    public HashSet<MyClient> connectedClients = new HashSet<MyClient>();
 
     public PartyPlugin I => Core.Current.pluginManager.Plugins.Find(e => e.Name == "Party_Plugin").Plugin as PartyPlugin;
 
@@ -151,18 +153,22 @@ public class MyClient : IPartyPluginInstance, IDisposable
         {
             IPAddress ipAddress = IPAddress.Parse("192.168.1.114"); // Replace with your server's IP address
             int port = 11000;
-
-            using (Socket client = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+            if(client == null)
+            {
+                client = new Client();
+                client.Name = I.GameController.Player.GetComponent<Player>().PlayerName;
+            }
+            using (client.Socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
             {
                 IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
 
                 try
                 {
-                    await client.ConnectAsync(remoteEP);
-                    I.LogMsg($"Socket connected to {client.RemoteEndPoint}");
+                    await client.Socket.ConnectAsync(remoteEP);
+                    I.LogMsg($"Socket connected to {client.Socket.RemoteEndPoint}");
 
                     byte[] msg = Encoding.ASCII.GetBytes($"{I.GameController.Player.GetComponent<Player>().PlayerName} said : {I.GameController.Player.PosNum.ToString()} <EOF>");
-                    int bytesSent = await client.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
+                    int bytesSent = await client.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
 
                     // Start a separate thread to listen for incoming messages
                     await Task.Run(() => ListenForMessages(client));
@@ -181,14 +187,14 @@ public class MyClient : IPartyPluginInstance, IDisposable
         }
     }
 
-    private async Task ListenForMessages(Socket client)
+    private async Task ListenForMessages(Client client)
     {
         try
         {
             while (true)
             {
                 byte[] bytes = new byte[1024];
-                int bytesRec = await client.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
+                int bytesRec = await client.Socket.ReceiveAsync(new ArraySegment<byte>(bytes), SocketFlags.None);
                 string receivedMessage = Encoding.ASCII.GetString(bytes, 0, bytesRec);
                 I.LogMessage($"ListenForMessages broadcasted message: {receivedMessage}", 1, Color.Green);
             }
@@ -199,6 +205,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
             IsClientRunning = false;
         }
     }
+
     public async Task SendMessageToServer(Message message)
     {
         try
@@ -206,14 +213,14 @@ public class MyClient : IPartyPluginInstance, IDisposable
             IPAddress ipAddress = IPAddress.Parse("192.168.1.114");
             int port = 11000;
 
-            using (client = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+            using (client.Socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
             {
                 IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
-                await client.ConnectAsync(remoteEP);
-                I.LogMsg($"Socket connected to {client.RemoteEndPoint}");
+                await client.Socket.ConnectAsync(remoteEP);
+                I.LogMsg($"Socket connected to {client.Socket.RemoteEndPoint}");
 
                 byte[] msg = Encoding.ASCII.GetBytes($"{message}<EOF>");
-                int bytesSent = await client.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
+                int bytesSent = await client.Socket.SendAsync(new ArraySegment<byte>(msg), SocketFlags.None);
             }
         }
         catch (Exception e)
@@ -221,8 +228,9 @@ public class MyClient : IPartyPluginInstance, IDisposable
             I.LogMsg($"Error sending message to server: {e}");
         }
     }
+
     public void Dispose()
     {
-        client.Dispose();
+        client.Socket.Dispose();
     }
 }
