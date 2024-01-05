@@ -62,8 +62,8 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
         {
             if (Settings.PartySettings.PartyMemberType.Value == "Leader")
             {
-                MyServer.BroadcastMessage(new Message(MessageType.none, "coucou"));
-                LogMsg(MyServer.connectedClients.Count.ToString());
+                MyServer.BroadcastMessage(new Message(MessageType.None, "coucou"));
+                LogMsg(MyServer.ConnectedClients.Count.ToString());
             }
             else
             {
@@ -76,7 +76,7 @@ public class PartyPlugin : BaseSettingsPlugin<PartyPluginSettings>
                     Client.StartClient();
 
                 if (Client.IsClientRunning)
-                    await Client.SendMessageToServer(new Message(MessageType.none, "coucou"));
+                    await Client.SendMessageToServer(new Message(MessageType.None, "coucou"));
             }
         };
         return true;

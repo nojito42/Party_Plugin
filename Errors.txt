@@ -1,2 +1,4 @@
 Build failed:
-[1/5/2024 2:28:06 PM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\PartyPlugin.cs(181, 101)] CS0103: El nombre 'i' no existe en el contexto actual
+[1/5/2024 6:20:44 PM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\PartyPlugin.cs(65, 67)] CS0117: 'MessageType' no contiene una definición para 'none'
+[1/5/2024 6:20:44 PM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\PartyPlugin.cs(66, 33)] CS1061: "MyServer" no contiene una definición para "connectedClients" ni un método de extensión accesible "connectedClients" que acepte un primer argumento del tipo "MyServer" (¿falta alguna directiva using o una referencia de ensamblado?)
+[1/5/2024 6:20:44 PM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\PartyPlugin.cs(79, 78)] CS0117: 'MessageType' no contiene una definición para 'none'
