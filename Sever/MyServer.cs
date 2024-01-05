@@ -117,10 +117,24 @@ public class MyServer : IPartyPluginInstance, IDisposable
     {
         string serializedMessage = JsonConvert.SerializeObject(message);
         byte[] messageBytes = Encoding.ASCII.GetBytes(serializedMessage);
+
+        // Filter out disconnected clients before broadcasting
+        connectedClients = connectedClients.Where(c => c.Socket != null && c.Socket.Connected).ToHashSet();
+
         connectedClients.ToList().ForEach(c =>
         {
-            try { c.Socket.Send(messageBytes); }
-            catch (Exception ex) { I.LogMsg($"Error broadcasting message: {ex}"); }
+            try
+            {
+                c.Socket.Send(messageBytes);
+            }
+            catch (SocketException se)
+            {
+                I.LogMsg($"Error broadcasting message to {c.client.Name}: {se}");
+            }
+            catch (Exception ex)
+            {
+                I.LogMsg($"Error broadcasting message: {ex}");
+            }
         });
     }
 
@@ -132,7 +146,7 @@ public class MyServer : IPartyPluginInstance, IDisposable
 public class MyClient : IPartyPluginInstance, IDisposable
 {
     public bool IsClientRunning;
-    private Client client;
+    public Client client;
     public Socket Socket;
     public HashSet<MyClient> connectedClients = new HashSet<MyClient>();
 
@@ -152,7 +166,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
         {
             IPAddress ipAddress = IPAddress.Parse("192.168.1.114"); // Replace with your server's IP address
             int port = 11000;
-            if(client == null)
+            if (client == null)
             {
                 client = new Client();
                 client.Name = I.GameController.Player.GetComponent<Player>().PlayerName;
@@ -218,7 +232,7 @@ public class MyClient : IPartyPluginInstance, IDisposable
                 await client.Socket.ConnectAsync(remoteEP);
                 I.LogMsg($"Socket connected to {client.Socket.RemoteEndPoint}");
 
-                byte[] msg = Encoding.ASCII.GetBytes($"{message}");
+                byte[] msg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(message));
 
                 await client.Socket.SendAsync(msg, SocketFlags.None);
             }
