@@ -1,4 +1,3 @@
 Build failed:
-[1/5/2024 6:20:44 PM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\PartyPlugin.cs(65, 67)] CS0117: 'MessageType' no contiene una definición para 'none'
-[1/5/2024 6:20:44 PM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\PartyPlugin.cs(66, 33)] CS1061: "MyServer" no contiene una definición para "connectedClients" ni un método de extensión accesible "connectedClients" que acepte un primer argumento del tipo "MyServer" (¿falta alguna directiva using o una referencia de ensamblado?)
-[1/5/2024 6:20:44 PM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\PartyPlugin.cs(79, 78)] CS0117: 'MessageType' no contiene una definición para 'none'
+[1/6/2024 4:54:03 AM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\PartyPlugin.cs(219, 50)] CS0019: El operador '==' no se puede aplicar a operandos del tipo 'grupo de métodos' y 'int'
+[1/6/2024 4:54:03 AM, C:\Users\Jonat\OneDrive\Bureau\poeHub3.23last\Plugins\Source\exApiPlugin\PartyPlugin.cs(222, 41)] CS0266: No se puede convertir implícitamente el tipo 'System.Collections.Generic.List<GameOffsets.Native.Vector2i>' en 'System.Collections.Generic.IEnumerable<System.Collections.Generic.List<GameOffsets.Native.Vector2i>>'. Ya existe una conversión explícita (compruebe si le falta una conversión)

@@ -190,7 +190,7 @@ public class MyServer : IDisposable
                         I.LogMsg($"Unexpected error broadcasting message to client: {ex}");
                     }
                 }
-            }  
+            }
         }
         catch (Exception ex)
         {
@@ -277,11 +277,11 @@ public class MyClient : IDisposable
                     Message myMessage = JsonConvert.DeserializeObject<Message>(receivedMessage);
 
                     // Log the deserialized message
-                    if(myMessage.Sender == null || myMessage.Sender.Name != ClientName)
+                    if (myMessage.Sender == null || myMessage.Sender.Name != ClientName)
                     {
                         I.LogMsg(myMessage.ToString());
                     }
-              
+
                 }
                 catch (JsonReaderException ex)
                 {
